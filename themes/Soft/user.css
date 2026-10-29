@@ -1,0 +1,35 @@
+/* Soft
+   Đồng hồ dạng số, nút phát to hơn một chút, thanh tiến trình bo tròn.
+   File này chỉ là CSS thuần — sửa thoải mái, hoặc copy sang themes/ trong thư mục dữ liệu. */
+
+[data-testid="playback-position"],
+[data-testid="playback-duration"] {
+  font-family: "Cascadia Mono", ui-monospace, "Segoe UI Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  opacity: 0.72;
+  transition: opacity 120ms ease;
+}
+
+[data-testid="playback-position"]:hover,
+[data-testid="playback-duration"]:hover {
+  opacity: 1;
+}
+
+[data-testid="control-button-playpause"] {
+  transform: scale(1.1);
+  transition: transform 120ms ease;
+}
+
+[data-testid="control-button-playpause"]:active {
+  transform: scale(1);
+}
+
+[data-testid="progress-bar"] {
+  border-radius: 999px;
+}
+
+[data-testid="now-playing-widget"] {
+  gap: 12px;
+}

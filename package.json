@@ -1,0 +1,30 @@
+{
+  "name": "spotify-extension",
+  "productName": "Spotify Extension",
+  "version": "0.1.0",
+  "description": "Themes, extensions and tweaks for the Spotify desktop client.",
+  "author": {
+    "name": "ninokiru",
+    "url": "https://github.com/ninokiru"
+  },
+  "license": "MIT",
+  "private": true,
+  "main": "dist/main/main.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build:main": "esbuild src/main/main.ts src/preload/preload.ts --bundle --outdir=dist --outbase=src --platform=node --target=node20 --format=cjs --external:electron --sourcemap",
+    "build:renderer": "esbuild src/renderer/main.ts --bundle --outfile=dist/renderer/main.js --format=iife --target=chrome130 --sourcemap && node scripts/copy-static.mjs",
+    "build:payload": "esbuild src/payload/bootstrap.ts --bundle --outfile=dist/payload/runtime.js --format=iife --target=chrome130 --minify",
+    "build": "npm run typecheck && npm run build:main && npm run build:renderer && npm run build:payload",
+    "start": "npm run build && electron .",
+    "pack": "npm run build && electron-builder --win --x64 --dir",
+    "dist": "npm run build && electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3"
+  }
+}
