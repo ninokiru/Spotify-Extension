@@ -34,6 +34,9 @@ const TIMEOUT = 8000;
 /** Highlights a line slightly before its timestamp so it lines up with the vocal. */
 const LEAD = 120;
 
+/** Long listening sessions would otherwise keep every track's lyrics forever. */
+const CACHE_LIMIT = 40;
+
 const cache = new Map<string, LyricsSnapshot>();
 const listeners = new Set<(snapshot: LyricsSnapshot) => void>();
 
@@ -51,6 +54,28 @@ function keyOf(info: TrackInfo | null): string {
   if (info.uri) return info.uri;
   if (!info.name) return "";
   return `${info.name}|${info.artists.join(",")}|${info.album}`;
+}
+
+function cacheGet(key: string): LyricsSnapshot | undefined {
+  const hit = cache.get(key);
+  if (!hit) return undefined;
+  // Re-insert so the entry becomes the most recently used one and the stale
+  // entries stay at the front of the map.
+  cache.delete(key);
+  cache.set(key, hit);
+  return hit;
+}
+
+function cacheSet(key: string, value: LyricsSnapshot): void {
+  // Map.set keeps the old slot of an existing key, so drop it first.
+  cache.delete(key);
+  cache.set(key, value);
+
+  while (cache.size > CACHE_LIMIT) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
 }
 
 export function lyricsSnapshot(): LyricsSnapshot {
@@ -117,10 +142,12 @@ async function sync(force: boolean): Promise<void> {
     return;
   }
 
-  const cached = cache.get(key);
-  if (cached && !force) {
-    publish(cached);
-    return;
+  if (!force) {
+    const cached = cacheGet(key);
+    if (cached) {
+      publish(cached);
+      return;
+    }
   }
 
   publish({ status: "loading", key, lines: [], synced: false, track: info });
@@ -135,7 +162,7 @@ async function load(info: TrackInfo, key: string, duration: number): Promise<voi
   try {
     const result = await request(info, duration, local.signal);
     if (controller !== local) return;
-    if (result.status !== "error") cache.set(key, result);
+    if (result.status !== "error") cacheSet(key, result);
     publish(result);
   } catch {
     if (controller !== local) return;

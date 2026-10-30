@@ -1,6 +1,10 @@
 package store
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestCompareVersions(t *testing.T) {
 	cases := []struct {
@@ -50,5 +54,70 @@ func sign(value int) int {
 		return -1
 	default:
 		return 0
+	}
+}
+
+func TestValidModuleID(t *testing.T) {
+	valid := []string{"adblock", "Soft", "hide-window-controls", "night.theme"}
+	for _, id := range valid {
+		if !validModuleID(id) {
+			t.Errorf("validModuleID(%q) = false, want true", id)
+		}
+	}
+
+	invalid := []string{"", "..", "../evil", "a/b", `a\b`, ".hidden"}
+	for _, id := range invalid {
+		if validModuleID(id) {
+			t.Errorf("validModuleID(%q) = true, want false", id)
+		}
+	}
+}
+
+func TestValidFileName(t *testing.T) {
+	cases := []struct {
+		name string
+		kind ModuleKind
+		want bool
+	}{
+		{"adblock.js", Extension, true},
+		{"user.css", Theme, true},
+		{"rounded-covers.css", Snippet, true},
+		{"../../x.js", Extension, false},
+		{"x.js", Theme, false},
+		{"x.css", Extension, false},
+		{"a/b.css", Theme, false},
+		{"..", Theme, false},
+	}
+	for _, tc := range cases {
+		if got := validFileName(tc.name, tc.kind); got != tc.want {
+			t.Errorf("validFileName(%q, %q) = %v, want %v", tc.name, tc.kind, got, tc.want)
+		}
+	}
+}
+
+func TestDownloadToRejectsForeignHost(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "x.js")
+	if err := downloadTo("https://example.com/x.js", target); err == nil {
+		t.Fatal("downloadTo should reject a foreign host")
+	}
+	if _, err := os.Stat(target); err == nil {
+		t.Fatalf("downloadTo must not create %s", target)
+	}
+	if err := downloadTo("", target); err != nil {
+		t.Fatalf("downloadTo(\"\") = %v, want nil", err)
+	}
+}
+
+func TestInstallFilesRejectsTraversal(t *testing.T) {
+	module := &Module{
+		ID:   "../evil",
+		Kind: Extension,
+		Files: []ModuleFile{{
+			Name: "x.js",
+			URL:  "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/x.js",
+		}},
+	}
+	if err := InstallFiles(module); err == nil {
+		t.Fatal("InstallFiles should reject a module id with traversal")
 	}
 }

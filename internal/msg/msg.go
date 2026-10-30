@@ -64,10 +64,12 @@ Examples:
 		"apply.replaced": "Restored the original client before patching",
 		"apply.done":     "Applied. Restart Spotify to see the changes.",
 		"apply.noasset":  "Asset folder is missing: %s",
+		"apply.running":  "Spotify is running — the changes apply after a restart.",
 
-		"restore.done":  "Restored the original client.",
-		"restore.none":  "No backup found — nothing to restore.",
-		"restore.skip":  "Client is not patched — nothing to do.",
+		"restore.done":    "Restored the original client.",
+		"restore.none":    "No backup found — nothing to restore.",
+		"restore.skip":    "Client is not patched — nothing to do.",
+		"restore.running": "Spotify is running — close it before restoring.",
 
 		"replace.none": "Could not restore the Spicetify patch automatically (no spicetify command, no backup folder found). Run \"spicetify restore\" yourself, then run this command again without --replace.",
 
@@ -191,10 +193,12 @@ Ví dụ:
 		"apply.replaced": "Đã khôi phục bản gốc trước khi vá",
 		"apply.done":     "Đã áp dụng. Khởi động lại Spotify để thấy thay đổi.",
 		"apply.noasset":  "Thiếu thư mục dữ liệu: %s",
+		"apply.running":  "Spotify đang chạy — thay đổi sẽ có hiệu lực sau khi khởi động lại.",
 
-		"restore.done":  "Đã khôi phục client về bản gốc.",
-		"restore.none":  "Không có bản sao lưu — không có gì để khôi phục.",
-		"restore.skip":  "Client chưa bị vá — không có gì để làm.",
+		"restore.done":    "Đã khôi phục client về bản gốc.",
+		"restore.none":    "Không có bản sao lưu — không có gì để khôi phục.",
+		"restore.skip":    "Client chưa bị vá — không có gì để làm.",
+		"restore.running": "Spotify đang chạy — hãy đóng Spotify trước khi khôi phục.",
 
 		"replace.none": "Không tự khôi phục được bản vá Spicetify (không có lệnh spicetify, không thấy thư mục backup). Cậu chạy \"spicetify restore\" thủ công rồi chạy lại lệnh này không cần --replace.",
 

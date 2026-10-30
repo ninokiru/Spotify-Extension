@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ninokiru/Spotify-Extension/internal/apply"
 	"github.com/ninokiru/Spotify-Extension/internal/paths"
+	"github.com/ninokiru/Spotify-Extension/internal/version"
 )
 
 type ModuleKind string
@@ -53,6 +54,21 @@ type Status struct {
 }
 
 const registryPath = "store/modules.json"
+
+// Limits and rules for the values that come from the remote catalogue.
+const (
+	// maxDownloadSize caps a single downloaded module file (8 MiB).
+	maxDownloadSize int64 = 8 << 20
+	// downloadHost is the only host module files may be fetched from.
+	downloadHost = "raw.githubusercontent.com"
+	// downloadPathPrefix is the only repository path module files may live in.
+	downloadPathPrefix = "/ninokiru/Spotify-Extension/"
+)
+
+// safeNamePattern matches a single path segment: it starts with a letter or a
+// digit and only holds letters, digits, dots, dashes and underscores. It never
+// matches a separator, so a name can not point outside its folder.
+var safeNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 
 func registryURL() string {
 	return "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/" + registryPath
@@ -312,6 +328,15 @@ func ModuleStatus(module *Module, enabledExtensions, enabledSnippets []string, a
 // InstallFiles copies or downloads the module files into the user folders.
 // Bundled modules already live next to the exe, so only downloads are written.
 func InstallFiles(module *Module) error {
+	if !validModuleID(module.ID) {
+		return fmt.Errorf("invalid module id %q", module.ID)
+	}
+	for _, file := range module.Files {
+		if !validFileName(file.Name, module.Kind) {
+			return fmt.Errorf("invalid file name %q for module %q", file.Name, module.ID)
+		}
+	}
+
 	hasURL := false
 	for _, file := range module.Files {
 		if file.URL != "" {
@@ -358,6 +383,15 @@ func InstallFiles(module *Module) error {
 
 // RemoveFiles deletes downloaded copies from the user folders.
 func RemoveFiles(module *Module) error {
+	if !validModuleID(module.ID) {
+		return fmt.Errorf("invalid module id %q", module.ID)
+	}
+	for _, file := range module.Files {
+		if !validFileName(file.Name, module.Kind) {
+			return fmt.Errorf("invalid file name %q for module %q", file.Name, module.ID)
+		}
+	}
+
 	switch module.Kind {
 	case Theme:
 		return os.RemoveAll(filepath.Join(paths.UserThemes(), module.ID))
@@ -477,55 +511,7 @@ func mergeVersions(base, remote []Module) []Module {
 // compareVersions orders two version strings the way semver does: build
 // metadata is ignored and a pre-release tag is older than the release.
 func compareVersions(left, right string) int {
-	parse := func(value string) ([]int, string) {
-		if index := strings.Index(value, "+"); index >= 0 {
-			value = value[:index]
-		}
-		pre := ""
-		if index := strings.Index(value, "-"); index >= 0 {
-			pre = value[index+1:]
-			value = value[:index]
-		}
-
-		numbers := []int{}
-		for _, part := range strings.Split(value, ".") {
-			number, _ := strconv.Atoi(part)
-			numbers = append(numbers, number)
-		}
-		return numbers, pre
-	}
-
-	a, aPre := parse(left)
-	b, bPre := parse(right)
-
-	length := len(a)
-	if len(b) > length {
-		length = len(b)
-	}
-
-	for i := 0; i < length; i++ {
-		av, bv := 0, 0
-		if i < len(a) {
-			av = a[i]
-		}
-		if i < len(b) {
-			bv = b[i]
-		}
-		if diff := av - bv; diff != 0 {
-			return diff
-		}
-	}
-
-	switch {
-	case aPre == bPre:
-		return 0
-	case aPre == "":
-		return 1
-	case bPre == "":
-		return -1
-	default:
-		return strings.Compare(aPre, bPre)
-	}
+	return version.Compare(left, right)
 }
 
 func fileExists(module *Module) bool {
@@ -579,18 +565,66 @@ func installedVersion(module *Module) string {
 	return ""
 }
 
-func downloadTo(url, target string) error {
-	if url == "" {
+// validModuleID reports whether a catalogue id is a single safe path segment.
+func validModuleID(id string) bool {
+	if !safeNamePattern.MatchString(id) {
+		return false
+	}
+	return !strings.Contains(id, "..")
+}
+
+// validFileName reports whether a catalogue file name is a single safe path
+// segment with the extension required by the module kind.
+func validFileName(name string, kind ModuleKind) bool {
+	if !safeNamePattern.MatchString(name) {
+		return false
+	}
+	if strings.Contains(name, "..") {
+		return false
+	}
+	if strings.ContainsAny(name, `/\`) {
+		return false
+	}
+
+	lower := strings.ToLower(name)
+	switch kind {
+	case Extension:
+		return strings.HasSuffix(lower, ".js")
+	case Theme, Snippet:
+		return strings.HasSuffix(lower, ".css")
+	default:
+		return false
+	}
+}
+
+func downloadTo(rawURL, target string) error {
+	if rawURL == "" {
 		return nil
 	}
+
 	// Only files hosted in the project repository are accepted, so a tampered
 	// catalogue cannot point the downloader anywhere else.
-	if !strings.HasPrefix(url, "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/") {
-		return fmt.Errorf("refusing download from %s", url)
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid download url %q: %w", rawURL, err)
+	}
+	if strings.ToLower(parsed.Scheme) != "https" {
+		return fmt.Errorf("refusing download from %q: scheme must be https", rawURL)
+	}
+	if strings.ToLower(parsed.Hostname()) != downloadHost {
+		return fmt.Errorf("refusing download from %q: host is not allowed", rawURL)
+	}
+	if !strings.HasPrefix(parsed.Path, downloadPathPrefix) {
+		return fmt.Errorf("refusing download from %q: path is not allowed", rawURL)
+	}
+	for _, segment := range strings.Split(parsed.Path, "/") {
+		if segment == ".." {
+			return fmt.Errorf("refusing download from %q: path traversal", rawURL)
+		}
 	}
 
 	client := http.Client{Timeout: 60 * time.Second}
-	response, err := client.Get(url)
+	response, err := client.Get(rawURL)
 	if err != nil {
 		return err
 	}
@@ -600,11 +634,36 @@ func downloadTo(url, target string) error {
 		return fmt.Errorf("download failed: %d", response.StatusCode)
 	}
 
-	data, err := io.ReadAll(response.Body)
+	data, err := io.ReadAll(io.LimitReader(response.Body, maxDownloadSize+1))
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(target, data, 0o644)
+	if int64(len(data)) > maxDownloadSize {
+		return fmt.Errorf("download of %q exceeds %d bytes", rawURL, maxDownloadSize)
+	}
+
+	// Write to a temporary file next to the target so a failed download never
+	// leaves a half-written module behind.
+	temp, err := os.CreateTemp(filepath.Dir(target), ".sxe-download-*")
+	if err != nil {
+		return err
+	}
+	tempName := temp.Name()
+
+	if _, err := temp.Write(data); err != nil {
+		temp.Close()
+		os.Remove(tempName)
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		os.Remove(tempName)
+		return err
+	}
+	if err := os.Rename(tempName, target); err != nil {
+		os.Remove(tempName)
+		return err
+	}
+	return nil
 }
 
 func contains(list []string, value string) bool {

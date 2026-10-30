@@ -22,13 +22,13 @@
 
   const LABELS = ["advertisement", "sponsored", "quảng cáo", "được tài trợ"];
 
+  // Card roots only: generic "li"/"section" ancestors would hide a whole row
+  // or panel that merely happens to contain a sponsored card.
   const CARD_SELECTOR = [
     '[data-testid="card-container"]',
     '[data-testid="context-item-link"]',
     '[data-testid="card-click-handler"]',
     ".Root__cardContainer",
-    "li",
-    "section",
   ].join(", ");
 
   function style() {
@@ -47,8 +47,10 @@
 
     let found;
     try {
+      // descendant-or-self keeps the walk inside `root`; an absolute "//" would
+      // ignore the context node and re-scan the entire document every time.
       found = document.evaluate(
-        `//*[${expression}]`,
+        `descendant-or-self::*[${expression}]`,
         root,
         null,
         XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
@@ -67,26 +69,38 @@
     }
   }
 
-  function sweep() {
-    if (!document.body) return;
-    hide(document.body);
-  }
-
   function start() {
     style();
-    sweep();
 
-    // The client re-renders often, so the scan runs at most a few times a
-    // second instead of on every single mutation.
-    let pending = 0;
-    const observer = new MutationObserver(() => {
-      if (pending) return;
-      pending = window.setTimeout(() => {
-        pending = 0;
-        sweep();
+    const body = document.body;
+    if (!body) return;
+
+    // The client renders before this script runs, so the first pass still has
+    // to cover the whole page exactly once.
+    hide(body);
+
+    // Later on only freshly inserted subtrees are scanned: walking the full
+    // tree on every re-render is what burned CPU while the track changed.
+    const pending = new Set();
+    let timer = 0;
+
+    const observer = new MutationObserver((mutations) => {
+      for (let index = 0; index < mutations.length; index += 1) {
+        const added = mutations[index].addedNodes;
+        for (let node = 0; node < added.length; node += 1) {
+          if (added[node] instanceof Element) pending.add(added[node]);
+        }
+      }
+
+      if (timer) return;
+      timer = window.setTimeout(() => {
+        timer = 0;
+        pending.forEach((node) => hide(node));
+        pending.clear();
       }, 400);
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+
+    observer.observe(body, { childList: true, subtree: true });
   }
 
   if (document.readyState === "loading") {

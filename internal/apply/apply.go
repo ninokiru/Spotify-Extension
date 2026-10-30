@@ -147,18 +147,50 @@ func ComposeUserCss(cfg config.Config) string {
 	return strings.Join(parts, "\n\n")
 }
 
-// WritePayload writes runtime.js, colors.css, user.css, manifest.js and the
-// enabled extensions into Apps/xpui/sxe.
+// WritePayload writes the payload into a staging folder and swaps it in, so a
+// failed write never leaves Spotify with a half-written payload.
 func WritePayload(install *detect.Install, cfg config.Config, version string) error {
 	target := filepath.Join(install.XpuiPath, paths.SxeDir)
+	staging := filepath.Join(install.XpuiPath, paths.SxeDir+".new")
+	previous := filepath.Join(install.XpuiPath, paths.SxeDir+".old")
 
-	if err := os.RemoveAll(target); err != nil {
+	_ = os.RemoveAll(staging)
+	if err := os.MkdirAll(staging, 0o755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(target, 0o755); err != nil {
+
+	if err := writePayload(staging, cfg, version); err != nil {
+		_ = os.RemoveAll(staging)
 		return err
 	}
 
+	hadPrevious := false
+	if _, err := os.Stat(target); err == nil {
+		_ = os.RemoveAll(previous)
+		if err := os.Rename(target, previous); err != nil {
+			_ = os.RemoveAll(staging)
+			return err
+		}
+		hadPrevious = true
+	}
+
+	if err := os.Rename(staging, target); err != nil {
+		if hadPrevious {
+			_ = os.Rename(previous, target)
+		}
+		_ = os.RemoveAll(staging)
+		return err
+	}
+
+	if hadPrevious {
+		_ = os.RemoveAll(previous)
+	}
+	return nil
+}
+
+// writePayload fills one folder with the runtime, the css files, the enabled
+// extensions and the manifest.
+func writePayload(dir string, cfg config.Config, version string) error {
 	if !isFile(paths.RuntimeFile()) {
 		return os.ErrNotExist
 	}
@@ -167,18 +199,18 @@ func WritePayload(install *detect.Install, cfg config.Config, version string) er
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(target, "runtime.js"), runtime, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "runtime.js"), runtime, 0o644); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(filepath.Join(target, "colors.css"), []byte(config.BuildColorsCss(cfg)), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "colors.css"), []byte(config.BuildColorsCss(cfg)), 0o644); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(target, "user.css"), []byte(ComposeUserCss(cfg)), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "user.css"), []byte(ComposeUserCss(cfg)), 0o644); err != nil {
 		return err
 	}
 
-	extensionsDir := filepath.Join(target, "extensions")
+	extensionsDir := filepath.Join(dir, "extensions")
 	if err := os.MkdirAll(extensionsDir, 0o755); err != nil {
 		return err
 	}
@@ -201,7 +233,7 @@ func WritePayload(install *detect.Install, cfg config.Config, version string) er
 		Repo:        paths.RepoURL,
 		Language:    cfg.Language,
 		SafeMode:    cfg.SafeMode,
-		Settings:    manifestSettings{"seekButtons": true, "songToast": true, "timeRemaining": false, "updateCheck": true},
+		Settings:    manifestSettings{"seekButtons": true, "songToast": true, "timeRemaining": false, "updateCheck": cfg.CheckUpdate},
 		GeneratedAt: time.Now().Format(time.RFC3339),
 		Extensions:  enabled,
 	}
@@ -211,7 +243,7 @@ func WritePayload(install *detect.Install, cfg config.Config, version string) er
 		return err
 	}
 	return os.WriteFile(
-		filepath.Join(target, "manifest.js"),
+		filepath.Join(dir, "manifest.js"),
 		[]byte("window.__sxeManifest = "+string(encoded)+";\n"),
 		0o644,
 	)
@@ -246,7 +278,7 @@ func PatchHtml(install *detect.Install) error {
 		next = clean[:end] + "\n" + block + "\n" + clean[end:]
 	}
 
-	return os.WriteFile(file, []byte(next), 0o644)
+	return writeFileAtomic(file, []byte(next))
 }
 
 // UnpatchHtml removes the sxe block from index.html.
@@ -260,12 +292,32 @@ func UnpatchHtml(install *detect.Install) error {
 	if clean == string(raw) {
 		return nil
 	}
-	return os.WriteFile(file, []byte(clean), 0o644)
+	return writeFileAtomic(file, []byte(clean))
 }
 
-// RemovePayload deletes the whole sxe folder from the client.
+// writeFileAtomic writes through a temporary file so a crash cannot leave a
+// truncated index.html behind.
+func writeFileAtomic(file string, data []byte) error {
+	temp := file + ".sxe-tmp"
+	if err := os.WriteFile(temp, data, 0o644); err != nil {
+		return err
+	}
+	if err := os.Rename(temp, file); err != nil {
+		_ = os.Remove(temp)
+		return err
+	}
+	return nil
+}
+
+// RemovePayload deletes the whole sxe folder from the client, including the
+// staging folders a crashed write may have left behind.
 func RemovePayload(install *detect.Install) error {
-	return os.RemoveAll(filepath.Join(install.XpuiPath, paths.SxeDir))
+	for _, name := range []string{paths.SxeDir, paths.SxeDir + ".new", paths.SxeDir + ".old"} {
+		if err := os.RemoveAll(filepath.Join(install.XpuiPath, name)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ExtensionHeader describes an extension file found in a folder.

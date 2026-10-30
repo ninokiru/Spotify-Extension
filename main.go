@@ -17,6 +17,7 @@ import (
 	"github.com/ninokiru/Spotify-Extension/internal/store"
 	"github.com/ninokiru/Spotify-Extension/internal/themes"
 	"github.com/ninokiru/Spotify-Extension/internal/update"
+	semver "github.com/ninokiru/Spotify-Extension/internal/version"
 )
 
 var version = "0.3.0"
@@ -210,7 +211,7 @@ func cmdBackup(lang string, args []string) int {
 		return code
 	}
 
-	if existing := backup.Read(install.ID); existing != nil {
+	if existing := backup.SnapshotFor(install.ID, install.Version); existing != nil {
 		fmt.Println(msg.Get(lang, "backup.exists"))
 		return 0
 	}
@@ -272,6 +273,10 @@ func cmdApply(lang string, args []string) int {
 		return 1
 	}
 
+	if process.Running() {
+		fmt.Println(msg.Get(lang, "apply.running"))
+	}
+
 	if _, err := backup.Ensure(install); err != nil {
 		return fail(lang, err)
 	}
@@ -299,6 +304,10 @@ func cmdRestore(lang string, args []string, full bool) int {
 		return code
 	}
 
+	if process.Running() {
+		fmt.Println(msg.Get(lang, "restore.running"))
+	}
+
 	restored, err := backup.Restore(install)
 	if err != nil {
 		return fail(lang, err)
@@ -320,6 +329,15 @@ func cmdRestore(lang string, args []string, full bool) int {
 		}
 		fmt.Println(msg.Get(lang, "restore.none"))
 		return 0
+	}
+
+	// The snapshot is pristine, so our payload folder has to go as well or the
+	// client stays half-patched forever.
+	if err := apply.RemovePayload(install); err != nil {
+		return fail(lang, err)
+	}
+	if err := apply.UnpatchHtml(install); err != nil {
+		return fail(lang, err)
 	}
 
 	fmt.Println(msg.Get(lang, "restore.done"))
@@ -671,7 +689,8 @@ func cmdRestart(lang string, args []string) int {
 	return 1
 }
 
-func cmdUpdate(lang string, args []string) int {	withYes := len(args) > 0 && (args[0] == "--yes" || args[0] == "-y")
+func cmdUpdate(lang string, args []string) int {
+	withYes := len(args) > 0 && (args[0] == "--yes" || args[0] == "-y")
 
 	tag, url, err := update.Latest()
 	if err != nil {
@@ -679,7 +698,8 @@ func cmdUpdate(lang string, args []string) int {	withYes := len(args) > 0 && (ar
 		return 1
 	}
 
-	if tag == "" || tag == "v"+version || tag == version {
+	latest := update.NormalizeTag(tag)
+	if latest == "" || semver.Compare(latest, version) <= 0 {
 		fmt.Println(msg.Get(lang, "update.latest", version))
 		return 0
 	}

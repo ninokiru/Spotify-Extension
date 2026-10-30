@@ -192,7 +192,7 @@ func readState(xpuiPath string) (State, PatchedBy) {
 }
 
 // Describe turns a candidate into an Install, or nil when it is not a Spotify folder.
-func Describe(candidate Candidate, backupManifest func(id string) (string, bool)) *Install {
+func Describe(candidate Candidate, backupManifest func(id string, version string) (string, bool)) *Install {
 	appsPath := filepath.Join(candidate.Root, "Apps")
 	if !isDir(appsPath) {
 		return nil
@@ -210,7 +210,7 @@ func Describe(candidate Candidate, backupManifest func(id string) (string, bool)
 		Arch:     readArch(filepath.Join(candidate.Root, "Spotify.exe")),
 	}
 
-	if backupAt, ok := backupManifest(install.ID); ok {
+	if backupAt, ok := backupManifest(install.ID, install.Version); ok {
 		install.HasBackup = true
 		install.BackupAt = backupAt
 	}
@@ -229,7 +229,7 @@ func Describe(candidate Candidate, backupManifest func(id string) (string, bool)
 }
 
 // All runs detection over default locations plus the configured extra roots.
-func All(extraRoots []string, backupManifest func(id string) (string, bool)) []Install {
+func All(extraRoots []string, backupManifest func(id string, version string) (string, bool)) []Install {
 	results := []Install{}
 
 	for _, candidate := range Collect(extraRoots) {
