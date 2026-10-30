@@ -18,29 +18,59 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Typecheck and bundle
+      - name: Typecheck and bundle payload
         run: npm run build
 
-      - name: Package installer
-        run: npx electron-builder --win --x64 --publish never
+      - name: Vet and test
+        shell: bash
+        run: |
+          go vet ./...
+          go test ./...
 
-      - name: Upload installer
-        uses: actions/upload-artifact@v4
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build CLI
+        shell: bash
+        run: |
+          mkdir -p release
+          go build -trimpath -ldflags "-s -w -X main.version=${{ steps.version.outputs.value }}" -o release/sxe.exe .
+
+      - name: Assemble zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staging/runtime | Out-Null
+          Copy-Item release/sxe.exe staging/
+          Copy-Item dist/payload/runtime.js staging/runtime/runtime.js
+          Copy-Item extensions staging/extensions -Recurse
+          Copy-Item themes staging/themes -Recurse
+          Copy-Item snippets staging/snippets -Recurse
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Compress-Archive -Path staging/* -DestinationPath release/spotify-extension-windows-x64.zip -Force
+
+      - name: Upload zip
+        uses: actions/upload-artifact@v7
         with:
-          name: spotify-extension-x64
-          path: |
-            release/*.exe
-            release/latest.yml
-            release/*.blockmap
+          name: spotify-extension-windows-x64
+          path: release/spotify-extension-windows-x64.zip
           if-no-files-found: error
           retention-days: 30
