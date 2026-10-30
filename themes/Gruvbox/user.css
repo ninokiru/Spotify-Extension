@@ -1,0 +1,53 @@
+/* Gruvbox
+   Theme Gruvbox — Tông nâu ấm cổ điển lấy cảm hứng từ bảng màu retro những năm 80. */
+
+:root {
+  --background-base: #282828;
+  --background-elevated-base: #1d2021;
+  --background-elevated-highlight: #2d2f2d;
+  --background-elevated-press: #191b1c;
+  --background-highlight: #3c3836;
+  --background-press: #1b1b1b;
+  --background-tinted-base: rgba(235, 219, 178, 0.07);
+  --background-tinted-highlight: rgba(235, 219, 178, 0.12);
+  --background-tinted-press: rgba(235, 219, 178, 0.04);
+
+  --text-base: #ebdbb2;
+  --text-subdued: #a89984;
+  --text-bright-accent: #fabd2f;
+
+  --essential-base: #ebdbb2;
+  --essential-subdued: #a89984;
+  --essential-bright-accent: #fabd2f;
+  --decorative-base: #ebdbb2;
+  --decorative-subdued: #8a826d;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #ebdbb2;
+  --spice-subtext: #a89984;
+  --spice-main: #282828;
+  --spice-sidebar: #1d2021;
+  --spice-player: #282828;
+  --spice-card: #3c3836;
+  --spice-button: #fabd2f;
+  --spice-button-active: #b8bb26;
+  --spice-button-disabled: #a89984;
+  --spice-tab-active: #3c3836;
+  --spice-rgb-text: 235, 219, 178;
+  --spice-rgb-main: 40, 40, 40;
+}
+
+[data-testid="card-container"] {
+  border-radius: 6px;
+}
+
+[data-testid="playback-position"],
+[data-testid="playback-duration"] {
+  opacity: 0.72;
+  transition: opacity 140ms ease;
+}
+
+[data-testid="playback-position"]:hover,
+[data-testid="playback-duration"]:hover {
+  opacity: 1;
+}

@@ -1,0 +1,47 @@
+/* Nord
+   Theme Nord — Tông xanh băng giá dịu mắt, phù hợp cho những buổi tối làm việc dài. */
+
+:root {
+  --background-base: #2e3440;
+  --background-elevated-base: #242933;
+  --background-elevated-highlight: #343942;
+  --background-elevated-press: #1f232b;
+  --background-highlight: #3b4252;
+  --background-press: #1f232d;
+  --background-tinted-base: rgba(236, 239, 244, 0.07);
+  --background-tinted-highlight: rgba(236, 239, 244, 0.12);
+  --background-tinted-press: rgba(236, 239, 244, 0.04);
+
+  --text-base: #eceff4;
+  --text-subdued: #9aa5b8;
+  --text-bright-accent: #88c0d0;
+
+  --essential-base: #eceff4;
+  --essential-subdued: #9aa5b8;
+  --essential-bright-accent: #88c0d0;
+  --decorative-base: #eceff4;
+  --decorative-subdued: #8d929a;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #eceff4;
+  --spice-subtext: #9aa5b8;
+  --spice-main: #2e3440;
+  --spice-sidebar: #242933;
+  --spice-player: #2e3440;
+  --spice-card: #3b4252;
+  --spice-button: #88c0d0;
+  --spice-button-active: #81a1c1;
+  --spice-button-disabled: #9aa5b8;
+  --spice-tab-active: #3b4252;
+  --spice-rgb-text: 236, 239, 244;
+  --spice-rgb-main: 46, 52, 64;
+}
+
+[data-testid="card-container"] {
+  border-radius: 8px;
+  transition: background-color 160ms ease;
+}
+
+[data-testid="now-playing-widget"] {
+  gap: 12px;
+}

@@ -19,6 +19,8 @@ type Extension struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	File string `json:"file"`
+	// Version comes from the file header and is only used by the CLI.
+	Version string `json:"-"`
 }
 
 type manifestSettings map[string]bool
@@ -54,7 +56,13 @@ func ListExtensions() []Extension {
 				continue
 			}
 			file := filepath.Join(dir, entry.Name())
-			byID[id] = Extension{ID: id, Name: headerField(file, "NAME", id), File: file}
+			header := ReadExtensionHeader(dir, id)
+			byID[id] = Extension{
+				ID:      id,
+				Name:    header.Name,
+				Version: header.Version,
+				File:    file,
+			}
 		}
 	}
 
@@ -268,8 +276,8 @@ type ExtensionHeader struct {
 	File    string
 }
 
-// ExtensionHeader reads the header comments of <dir>/<id>.js.
-func ExtensionHeader(dir, id string) ExtensionHeader {
+// ReadExtensionHeader reads the header comments of <dir>/<id>.js.
+func ReadExtensionHeader(dir, id string) ExtensionHeader {
 	file := filepath.Join(dir, id+".js")
 	header := ExtensionHeader{ID: id, Name: id, File: file}
 
@@ -295,26 +303,6 @@ func headerValue(source, key string) string {
 		return strings.TrimSpace(match[1])
 	}
 	return ""
-}
-
-// headerField resolves a single header key with a fallback.
-func headerField(file, key, fallback string) string {
-	if value := headerValue(readHead(file), key); value != "" {
-		return value
-	}
-	return fallback
-}
-
-func readHead(file string) string {
-	raw, err := os.ReadFile(file)
-	if err != nil {
-		return ""
-	}
-	head := string(raw)
-	if len(head) > 4096 {
-		head = head[:4096]
-	}
-	return head
 }
 
 func readFirst(dir string, names ...string) string {

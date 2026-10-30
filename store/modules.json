@@ -5,13 +5,16 @@
       "id": "adblock",
       "name": "Adblock",
       "author": "ninokiru",
-      "description": "Removes ad slots and sponsored cards in the Spotify client.",
-      "descriptionVi": "Ẩn quảng cáo và thẻ được tài trợ trong giao diện Spotify.",
+      "description": "Removes ad slots and upgrade banners from the client.",
+      "descriptionVi": "Ẩn quảng cáo và các bảng nâng cấp trong giao diện Spotify.",
       "version": "1.0.0",
       "kind": "extension",
       "downloads": 0,
       "glyph": "shield",
-      "accent": ["#123a24", "#0d1f16"],
+      "accent": [
+        "#123a24",
+        "#0d1f16"
+      ],
       "files": [
         {
           "name": "adblock.js",
@@ -29,11 +32,56 @@
       "kind": "extension",
       "downloads": 0,
       "glyph": "skip",
-      "accent": ["#3a2a12", "#1f160a"],
+      "accent": [
+        "#3a2a12",
+        "#1f160a"
+      ],
       "files": [
         {
           "name": "auto-skip-explicit.js",
           "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/auto-skip-explicit.js"
+        }
+      ]
+    },
+    {
+      "id": "quick-keys",
+      "name": "Quick keys",
+      "author": "ninokiru",
+      "description": "Alt+←/→ seek 10s, Alt+↑/↓ volume, Alt+M mute.",
+      "descriptionVi": "Alt+←/→ tua 10 giây, Alt+↑/↓ chỉnh âm lượng, Alt+M tắt tiếng.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "keys",
+      "accent": [
+        "#123040",
+        "#0d1a22"
+      ],
+      "files": [
+        {
+          "name": "quick-keys.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/quick-keys.js"
+        }
+      ]
+    },
+    {
+      "id": "track-copy",
+      "name": "Track copy",
+      "author": "ninokiru",
+      "description": "Alt+C copies the current track as “Song — Artist”.",
+      "descriptionVi": "Alt+C chép tên bài hiện tại theo dạng “Tên bài — Ca sĩ”.",
+      "version": "1.1.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "copy",
+      "accent": [
+        "#2c2440",
+        "#161222"
+      ],
+      "files": [
+        {
+          "name": "track-copy.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/track-copy.js"
         }
       ]
     },
@@ -47,11 +95,350 @@
       "kind": "extension",
       "downloads": 0,
       "glyph": "wave",
-      "accent": ["#123040", "#0d1a22"],
+      "accent": [
+        "#123040",
+        "#0d1a22"
+      ],
       "files": [
         {
           "name": "volume-memory.js",
           "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/volume-memory.js"
+        }
+      ]
+    },
+    {
+      "id": "skip-short-tracks",
+      "name": "Skip short tracks",
+      "author": "ninokiru",
+      "description": "Skips tracks shorter than 45 seconds while they are playing.",
+      "descriptionVi": "Tự nhảy qua các bài ngắn hơn 45 giây khi đang phát.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "skip",
+      "accent": [
+        "#3a2a12",
+        "#1f160a"
+      ],
+      "files": [
+        {
+          "name": "skip-short-tracks.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/skip-short-tracks.js"
+        }
+      ]
+    },
+    {
+      "id": "playback-speed",
+      "name": "Playback speed",
+      "author": "ninokiru",
+      "description": "Switches the playback speed with Alt+1.",
+      "descriptionVi": "Đổi tốc độ phát bằng Alt+1.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "wave",
+      "accent": [
+        "#20242b",
+        "#12151a"
+      ],
+      "files": [
+        {
+          "name": "playback-speed.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/playback-speed.js"
+        }
+      ]
+    },
+    {
+      "id": "like-hotkey",
+      "name": "Like hotkey",
+      "author": "ninokiru",
+      "description": "Presses the like button of the current track with Alt+L.",
+      "descriptionVi": "Bấm nút thích của bài đang phát bằng Alt+L.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "sparkle",
+      "accent": [
+        "#2c2440",
+        "#161222"
+      ],
+      "files": [
+        {
+          "name": "like-hotkey.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/like-hotkey.js"
+        }
+      ]
+    },
+    {
+      "id": "hide-sidebar",
+      "name": "Hide sidebar",
+      "author": "ninokiru",
+      "description": "Hides the left sidebar of the client with Alt+B.",
+      "descriptionVi": "Ẩn thanh bên trái bằng Alt+B.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "window",
+      "accent": [
+        "#20242b",
+        "#12151a"
+      ],
+      "files": [
+        {
+          "name": "hide-sidebar.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/hide-sidebar.js"
+        }
+      ]
+    },
+    {
+      "id": "focus-mode",
+      "name": "Focus mode",
+      "author": "ninokiru",
+      "description": "Dims the sidebar and main view so the player stands out.",
+      "descriptionVi": "Làm mờ sidebar và nội dung để nổi bật thanh phát.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "sparkle",
+      "accent": [
+        "#123040",
+        "#0d1a22"
+      ],
+      "files": [
+        {
+          "name": "focus-mode.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/focus-mode.js"
+        }
+      ]
+    },
+    {
+      "id": "volume-wheel",
+      "name": "Volume wheel",
+      "author": "ninokiru",
+      "description": "Changes the volume by five percent when the wheel turns over the player bar.",
+      "descriptionVi": "Lăn chuột trên thanh phát để đổi âm lượng 5%.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "wave",
+      "accent": [
+        "#3a2f18",
+        "#1b1710"
+      ],
+      "files": [
+        {
+          "name": "volume-wheel.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/volume-wheel.js"
+        }
+      ]
+    },
+    {
+      "id": "Soft",
+      "name": "Soft",
+      "author": "ninokiru",
+      "description": "Digital clock, larger play button, rounded progress bar.",
+      "descriptionVi": "Đồng hồ dạng số, nút phát to hơn, thanh tiến trình bo tròn.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#3a2f18",
+        "#1b1710"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/Soft/user.css"
+        }
+      ]
+    },
+    {
+      "id": "Nord",
+      "name": "Nord",
+      "author": "ninokiru",
+      "description": "Cool arctic blues with soft grey surfaces.",
+      "descriptionVi": "Xanh Bắc cực dịu mắt, nền xám nhạt.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#2e3440",
+        "#1c212b"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/Nord/user.css"
+        }
+      ]
+    },
+    {
+      "id": "Dracula",
+      "name": "Dracula",
+      "author": "ninokiru",
+      "description": "Purple and pink on a dark violet base.",
+      "descriptionVi": "Tím hồng trên nền tím than.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#282a36",
+        "#1a1b26"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/Dracula/user.css"
+        }
+      ]
+    },
+    {
+      "id": "Amoled",
+      "name": "Amoled",
+      "author": "ninokiru",
+      "description": "True black surfaces for OLED screens.",
+      "descriptionVi": "Nền đen tuyệt đối cho màn hình OLED.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#000000",
+        "#0b0b0b"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/Amoled/user.css"
+        }
+      ]
+    },
+    {
+      "id": "Catppuccin",
+      "name": "Catppuccin",
+      "author": "ninokiru",
+      "description": "Pastel lavender and blue Mocha palette.",
+      "descriptionVi": "Bảng màu Mocha pastel tím xanh.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#1e1e2e",
+        "#141420"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/Catppuccin/user.css"
+        }
+      ]
+    },
+    {
+      "id": "Gruvbox",
+      "name": "Gruvbox",
+      "author": "ninokiru",
+      "description": "Warm retro earth tones with amber accents.",
+      "descriptionVi": "Tông đất ấm retro với điểm nhấn hổ phách.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#282828",
+        "#1d2021"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/Gruvbox/user.css"
+        }
+      ]
+    },
+    {
+      "id": "TokyoNight",
+      "name": "Tokyo Night",
+      "author": "ninokiru",
+      "description": "Deep blue night with a bright blue accent.",
+      "descriptionVi": "Màu đêm xanh sâu với điểm nhấn xanh sáng.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#1a1b26",
+        "#12131c"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/TokyoNight/user.css"
+        }
+      ]
+    },
+    {
+      "id": "RosePine",
+      "name": "Rosé Pine",
+      "author": "ninokiru",
+      "description": "Soft rose and lilac on a pine background.",
+      "descriptionVi": "Hồng dây và tím nhạt trên nền xanh thông.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#191724",
+        "#12101c"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/RosePine/user.css"
+        }
+      ]
+    },
+    {
+      "id": "Solarized",
+      "name": "Solarized",
+      "author": "ninokiru",
+      "description": "Low contrast teal and sand, easy on the eyes.",
+      "descriptionVi": "Xanh lam và cát tương phản thấp, dịu mắt.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": [
+        "#002b36",
+        "#073642"
+      ],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/themes/Solarized/user.css"
+        }
+      ]
+    },
+    {
+      "id": "hide-window-controls",
+      "name": "Hide window controls",
+      "author": "ninokiru",
+      "description": "Hides the Windows window buttons so Spotify fills the screen.",
+      "descriptionVi": "Ẩn nút cửa sổ Windows để Spotify chiếm hết màn hình.",
+      "version": "1.0.0",
+      "kind": "snippet",
+      "downloads": 0,
+      "glyph": "window",
+      "accent": [
+        "#20242b",
+        "#12151a"
+      ],
+      "files": [
+        {
+          "name": "hide-window-controls.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/snippets/hide-window-controls.css"
         }
       ]
     },
@@ -65,7 +452,10 @@
       "kind": "theme",
       "downloads": 0,
       "glyph": "palette",
-      "accent": ["#1b2436", "#0d121c"],
+      "accent": [
+        "#1b2436",
+        "#0d121c"
+      ],
       "files": [
         {
           "name": "user.css",
@@ -83,7 +473,10 @@
       "kind": "snippet",
       "downloads": 0,
       "glyph": "wave",
-      "accent": ["#20242b", "#12151a"],
+      "accent": [
+        "#20242b",
+        "#12151a"
+      ],
       "files": [
         {
           "name": "rounded-covers.css",

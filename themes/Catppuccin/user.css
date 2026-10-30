@@ -1,0 +1,47 @@
+/* Catppuccin
+   Theme Catppuccin — Bảng màu Mocha pastel ngọt ngào, dịu và dễ chịu khi nhìn lâu. */
+
+:root {
+  --background-base: #1e1e2e;
+  --background-elevated-base: #181825;
+  --background-elevated-highlight: #262736;
+  --background-elevated-press: #14141f;
+  --background-highlight: #313244;
+  --background-press: #11111b;
+  --background-tinted-base: rgba(205, 214, 244, 0.07);
+  --background-tinted-highlight: rgba(205, 214, 244, 0.12);
+  --background-tinted-press: rgba(205, 214, 244, 0.04);
+
+  --text-base: #cdd6f4;
+  --text-subdued: #a6adc8;
+  --text-bright-accent: #cba6f7;
+
+  --essential-base: #cdd6f4;
+  --essential-subdued: #a6adc8;
+  --essential-bright-accent: #cba6f7;
+  --decorative-base: #cdd6f4;
+  --decorative-subdued: #767a91;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #cdd6f4;
+  --spice-subtext: #a6adc8;
+  --spice-main: #1e1e2e;
+  --spice-sidebar: #181825;
+  --spice-player: #1e1e2e;
+  --spice-card: #313244;
+  --spice-button: #cba6f7;
+  --spice-button-active: #89b4fa;
+  --spice-button-disabled: #a6adc8;
+  --spice-tab-active: #313244;
+  --spice-rgb-text: 205, 214, 244;
+  --spice-rgb-main: 30, 30, 46;
+}
+
+[data-testid="card-container"] {
+  border-radius: 12px;
+  transition: background-color 160ms ease;
+}
+
+[data-testid="now-playing-widget"] {
+  gap: 12px;
+}

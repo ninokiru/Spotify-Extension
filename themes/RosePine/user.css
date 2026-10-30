@@ -1,0 +1,47 @@
+/* RosePine
+   Theme RosePine — Sắc hồng tro trầm lặng, mềm mại và thư giãn cho đôi mắt. */
+
+:root {
+  --background-base: #191724;
+  --background-elevated-base: #1f1d2e;
+  --background-elevated-highlight: #2e2c3e;
+  --background-elevated-press: #1a1927;
+  --background-highlight: #26233a;
+  --background-press: #121019;
+  --background-tinted-base: rgba(224, 222, 244, 0.07);
+  --background-tinted-highlight: rgba(224, 222, 244, 0.12);
+  --background-tinted-press: rgba(224, 222, 244, 0.04);
+
+  --text-base: #e0def4;
+  --text-subdued: #908caa;
+  --text-bright-accent: #ebbcba;
+
+  --essential-base: #e0def4;
+  --essential-subdued: #908caa;
+  --essential-bright-accent: #ebbcba;
+  --decorative-base: #e0def4;
+  --decorative-subdued: #7c7a8c;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #e0def4;
+  --spice-subtext: #908caa;
+  --spice-main: #191724;
+  --spice-sidebar: #1f1d2e;
+  --spice-player: #191724;
+  --spice-card: #26233a;
+  --spice-button: #ebbcba;
+  --spice-button-active: #c4a7e7;
+  --spice-button-disabled: #908caa;
+  --spice-tab-active: #26233a;
+  --spice-rgb-text: 224, 222, 244;
+  --spice-rgb-main: 25, 23, 36;
+}
+
+[data-testid="card-container"] {
+  border-radius: 12px;
+}
+
+[data-testid="playback-position"],
+[data-testid="playback-duration"] {
+  opacity: 0.75;
+}

@@ -13,7 +13,9 @@ import (
 	"github.com/ninokiru/Spotify-Extension/internal/detect"
 	"github.com/ninokiru/Spotify-Extension/internal/msg"
 	"github.com/ninokiru/Spotify-Extension/internal/paths"
+	"github.com/ninokiru/Spotify-Extension/internal/process"
 	"github.com/ninokiru/Spotify-Extension/internal/store"
+	"github.com/ninokiru/Spotify-Extension/internal/themes"
 	"github.com/ninokiru/Spotify-Extension/internal/update"
 )
 
@@ -67,6 +69,18 @@ func run(args []string) int {
 
 	case "store":
 		return cmdStore(lang, cfg, rest)
+
+	case "theme", "themes":
+		return cmdTheme(lang, cfg, rest)
+
+	case "ext", "extension", "extensions":
+		return cmdExt(lang, cfg, rest)
+
+	case "doctor":
+		return cmdDoctor(lang, cfg)
+
+	case "restart":
+		return cmdRestart(lang, rest)
 
 	case "update":
 		return cmdUpdate(lang, rest)
@@ -253,7 +267,7 @@ func cmdApply(lang string, args []string) int {
 		return 1
 	}
 
-	if !fileExists(paths.RuntimeFile()) {
+	if !isFile(paths.RuntimeFile()) {
 		fmt.Fprintln(os.Stderr, msg.Get(lang, "apply.noasset", filepath.Dir(paths.RuntimeFile())))
 		return 1
 	}
@@ -315,7 +329,7 @@ func cmdRestore(lang string, args []string, full bool) int {
 func cmdConfig(lang string, cfg config.Config, args []string) int {
 	switch len(args) {
 	case 0:
-		fmt.Printf(msg.Get(lang, "config.title"), paths.ConfigFile())
+		fmt.Printf("%s\n", msg.Get(lang, "config.title", paths.ConfigFile()))
 		fmt.Println()
 		for _, key := range []string{
 			"language", "spotify_path", "theme", "check_update", "safe_mode",
@@ -457,8 +471,207 @@ func cmdStore(lang string, cfg config.Config, args []string) int {
 	}
 }
 
-func cmdUpdate(lang string, args []string) int {
-	withYes := len(args) > 0 && (args[0] == "--yes" || args[0] == "-y")
+func cmdTheme(lang string, cfg config.Config, args []string) int {
+	if len(args) == 0 || args[0] == "list" {
+		list := themes.List()
+		if len(list) == 0 {
+			fmt.Println(msg.Get(lang, "theme.none"))
+			return 0
+		}
+
+		fmt.Println(msg.Get(lang, "theme.title"))
+		fmt.Println()
+		for _, theme := range list {
+			marker := "  "
+			if theme.ID == cfg.Theme {
+				marker = "* "
+			}
+			source := msg.Get(lang, "theme.user")
+			if theme.Bundled {
+				source = msg.Get(lang, "theme.bundled")
+			}
+			fmt.Printf("%s %-18s %s\n", marker, theme.ID, source)
+		}
+		return 0
+	}
+
+	if args[0] != "set" || len(args) < 2 {
+		fmt.Fprintln(os.Stderr, msg.Get(lang, "error.needArg", "theme list|set <name>"))
+		return 1
+	}
+
+	name := args[1]
+	if name == "default" || name == "none" {
+		cfg.Theme = ""
+	} else {
+		if themes.Find(name) == nil {
+			fmt.Fprintln(os.Stderr, msg.Get(lang, "theme.none"))
+			return 1
+		}
+		cfg.Theme = name
+	}
+
+	if err := config.Save(cfg); err != nil {
+		return fail(lang, err)
+	}
+	fmt.Println(msg.Get(lang, "theme.set", cfg.Theme))
+	return 0
+}
+
+func cmdExt(lang string, cfg config.Config, args []string) int {
+	list := apply.ListExtensions()
+
+	if len(args) == 0 || args[0] == "list" {
+		if len(list) == 0 {
+			fmt.Println(msg.Get(lang, "ext.none"))
+			return 0
+		}
+
+		fmt.Println(msg.Get(lang, "ext.title"))
+		fmt.Println()
+		for _, extension := range list {
+			marker := "  "
+			if contains(cfg.Extensions, extension.ID) {
+				marker = "* "
+			}
+			version := extension.Version
+			if version == "" {
+				version = "-"
+			}
+			fmt.Printf("%s %-22s v%-9s %s\n", marker, extension.Name, version, extension.ID)
+		}
+		return 0
+	}
+
+	action := args[0]
+	if len(args) < 2 {
+		fmt.Fprintln(os.Stderr, msg.Get(lang, "error.needArg", "ext list|on|off <id>"))
+		return 1
+	}
+
+	id := args[1]
+	found := false
+	for _, extension := range list {
+		if extension.ID == id {
+			found = true
+		}
+	}
+	if !found {
+		fmt.Fprintln(os.Stderr, msg.Get(lang, "ext.notFound", id))
+		return 1
+	}
+
+	switch action {
+	case "on", "enable":
+		cfg.Extensions = addUnique(cfg.Extensions, id)
+	case "off", "disable":
+		cfg.Extensions = removeItem(cfg.Extensions, id)
+	default:
+		fmt.Fprintln(os.Stderr, msg.Get(lang, "error.needArg", "ext list|on|off <id>"))
+		return 1
+	}
+
+	if err := config.Save(cfg); err != nil {
+		return fail(lang, err)
+	}
+
+	if action == "on" || action == "enable" {
+		fmt.Println(msg.Get(lang, "ext.on", id))
+	} else {
+		fmt.Println(msg.Get(lang, "ext.off", id))
+	}
+	return 0
+}
+
+func cmdDoctor(lang string, cfg config.Config) int {
+	fmt.Println(msg.Get(lang, "doctor.title"))
+	fmt.Println()
+
+	installs := allInstalls()
+	if len(installs) == 0 {
+		doctorLine(msg.Get(lang, "doctor.installs"), "!!", msg.Get(lang, "doctor.missing"))
+	} else {
+		for i := range installs {
+			install := &installs[i]
+			backupState := msg.Get(lang, "doctor.none")
+			if install.HasBackup {
+				backupState = msg.Get(lang, "doctor.ok")
+			}
+			doctorLine(msg.Get(lang, "doctor.installs"), "ok",
+				fmt.Sprintf("%s · %s · %s", install.Root, install.State, backupState))
+		}
+	}
+
+	configState := msg.Get(lang, "doctor.ok")
+	if _, err := os.Stat(paths.ConfigFile()); err != nil {
+		configState = msg.Get(lang, "doctor.missing")
+	}
+	doctorLine(msg.Get(lang, "doctor.config"), stateMark(configState),
+		fmt.Sprintf("%s · %d ext · %d snippet", paths.ConfigFile(), len(cfg.Extensions), len(cfg.Snippets)))
+
+	runtimeState := msg.Get(lang, "doctor.missing")
+	if isFile(paths.RuntimeFile()) {
+		runtimeState = msg.Get(lang, "doctor.ok")
+	}
+	doctorLine(msg.Get(lang, "doctor.runtime"), stateMark(runtimeState), paths.RuntimeFile())
+
+	doctorLine(msg.Get(lang, "doctor.extensions"), "ok",
+		fmt.Sprintf("%s · %d", msg.Get(lang, "doctor.count", len(apply.ListExtensions())), len(cfg.Extensions)))
+	doctorLine(msg.Get(lang, "doctor.themes"), "ok",
+		fmt.Sprintf("%s · %d", msg.Get(lang, "doctor.count", len(themes.List())), len(cfg.Theme)))
+	doctorLine(msg.Get(lang, "doctor.snippets"), "ok",
+		msg.Get(lang, "doctor.count", len(cfg.Snippets)))
+
+	networkState := msg.Get(lang, "doctor.warn")
+	detail := msg.Get(lang, "doctor.missing")
+	if tag, _, err := update.Latest(); err == nil {
+		networkState = msg.Get(lang, "doctor.ok")
+		detail = tag
+	}
+	doctorLine(msg.Get(lang, "doctor.network"), stateMark(networkState), detail)
+
+	runningState := msg.Get(lang, "doctor.no")
+	if process.Running() {
+		runningState = msg.Get(lang, "doctor.yes")
+	}
+	doctorLine(msg.Get(lang, "doctor.running"), stateMark(runningState), runningState)
+
+	return 0
+}
+
+func doctorLine(label, state, detail string) {
+	fmt.Printf("  %-4s %-20s %s\n", state, label, detail)
+}
+
+func stateMark(state string) string {
+	if state == msg.Get("en", "doctor.ok") {
+		return "ok"
+	}
+	if state == msg.Get("en", "doctor.missing") {
+		return "!!"
+	}
+	return "--"
+}
+
+func cmdRestart(lang string, args []string) int {
+	cfg, _ := config.Load()
+	flags := parseFlags(args)
+
+	install, code := pickInstall(lang, cfg, flags)
+	if code != 0 {
+		return code
+	}
+
+	if process.Restart(install.Root) {
+		fmt.Println(msg.Get(lang, "restart.done"))
+		return 0
+	}
+
+	fmt.Fprintln(os.Stderr, msg.Get(lang, "restart.failed"))
+	return 1
+}
+
+func cmdUpdate(lang string, args []string) int {	withYes := len(args) > 0 && (args[0] == "--yes" || args[0] == "-y")
 
 	tag, url, err := update.Latest()
 	if err != nil {
@@ -535,6 +748,15 @@ func addUnique(list []string, value string) []string {
 		}
 	}
 	return append(list, value)
+}
+
+func contains(list []string, value string) bool {
+	for _, item := range list {
+		if item == value {
+			return true
+		}
+	}
+	return false
 }
 
 func removeItem(list []string, value string) []string {

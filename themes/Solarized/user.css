@@ -1,0 +1,50 @@
+/* Solarized
+   Theme Solarized — Nền xanh mực trầm ấm, độ tương phản thấp giúp giảm mỏi mắt. */
+
+:root {
+  --background-base: #002b36;
+  --background-elevated-base: #073642;
+  --background-elevated-highlight: #19444e;
+  --background-elevated-press: #062e38;
+  --background-highlight: #073642;
+  --background-press: #00212b;
+  --background-tinted-base: rgba(238, 232, 213, 0.07);
+  --background-tinted-highlight: rgba(238, 232, 213, 0.12);
+  --background-tinted-press: rgba(238, 232, 213, 0.04);
+
+  --text-base: #eee8d5;
+  --text-subdued: #93a1a1;
+  --text-bright-accent: #b58900;
+
+  --essential-base: #eee8d5;
+  --essential-subdued: #93a1a1;
+  --essential-bright-accent: #b58900;
+  --decorative-base: #eee8d5;
+  --decorative-subdued: #778a86;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #eee8d5;
+  --spice-subtext: #93a1a1;
+  --spice-main: #002b36;
+  --spice-sidebar: #073642;
+  --spice-player: #002b36;
+  --spice-card: #073642;
+  --spice-button: #b58900;
+  --spice-button-active: #268bd2;
+  --spice-button-disabled: #93a1a1;
+  --spice-tab-active: #073642;
+  --spice-rgb-text: 238, 232, 213;
+  --spice-rgb-main: 0, 43, 54;
+}
+
+[data-testid="card-container"] {
+  border-radius: 8px;
+}
+
+[data-testid="control-button-playpause"] {
+  transition: transform 140ms ease;
+}
+
+[data-testid="control-button-playpause"]:hover {
+  transform: scale(1.05);
+}

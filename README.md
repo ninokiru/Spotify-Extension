@@ -45,6 +45,10 @@ Gỡ hoàn toàn: `sxe restore` — Spotify trở về nguyên bản.
 | `sxe uninstall` | Giống restore, kèm dọn file thừa khi không có backup |
 | `sxe config` | In cấu hình hiện tại |
 | `sxe config <khoá> <giá>` | Sửa một mục (xem dưới) |
+| `sxe theme list` / `sxe theme set <tên>` | Liệt kê / chọn theme |
+| `sxe ext list` / `sxe ext on\|off <id>` | Liệt kê / bật / tắt extension |
+| `sxe doctor` | In báo cáo chẩn đoán (client, backup, runtime, mạng…) |
+| `sxe restart` | Khởi động lại Spotify |
 | `sxe store list [all]` | Liệt kê module (thêm `all` để gộp kho online) |
 | `sxe store install <id>` | Cài module rồi ghi vào config |
 | `sxe store uninstall <id>` | Gỡ module |
@@ -106,10 +110,16 @@ Module đi kèm trong zip:
 | --- | --- | --- |
 | Adblock | extension | Ẩn quảng cáo và thẻ được tài trợ |
 | Auto skip explicit | extension | Tự nhảy bài có nhãn explicit (Alt+E bật/tắt) |
+| Skip short tracks | extension | Tự nhảy bài ngắn hơn 45 giây (Alt+K bật/tắt) |
 | Volume memory | extension | Nhớ mức âm lượng, khôi phục khi mở Spotify |
+| Volume wheel | extension | Lăn chuột trên thanh phát để đổi âm lượng 5% |
+| Playback speed | extension | Đổi tốc độ phát 1x → 1.25x → 1.5x → 2x (Alt+1) |
+| Like hotkey | extension | Bấm nút thích bài đang phát (Alt+L) |
+| Hide sidebar | extension | Ẩn thanh bên trái (Alt+B) |
+| Focus mode | extension | Làm mờ giao diện, nổi bật thanh phát (Alt+F) |
 | Quick keys | extension | Alt+←/→ tua 10 giây, Alt+↑/↓ âm lượng, Alt+M tắt tiếng |
 | Track copy | extension | Alt+C chép tên bài hiện tại |
-| Soft | theme | Đồng hồ số, nút phát to, thanh tiến trình bo tròn |
+| Soft, Nord, Dracula, Amoled, Catppuccin, Gruvbox, TokyoNight, Rosé Pine, Solarized | theme | 9 theme màu sẵn, đổi bằng `sxe theme set <tên>` |
 | Hide window controls | snippet | Ẩn nút cửa sổ Windows của Spotify |
 
 Kho online lấy từ `store/modules.json` trong repo — module mới (như theme **Night**, snippet **Rounded covers**) tải thẳng về `%APPDATA%\spotify-extension\`. Thêm module vào `store/modules.json` là nó xuất hiện với tất cả người dùng, không cần ra bản mới.

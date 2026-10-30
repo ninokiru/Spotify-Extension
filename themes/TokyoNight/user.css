@@ -1,0 +1,47 @@
+/* TokyoNight
+   Theme TokyoNight — Sắc xanh đêm Tokyo, sâu thẳm với điểm nhấn xanh và tím neon. */
+
+:root {
+  --background-base: #1a1b26;
+  --background-elevated-base: #16161e;
+  --background-elevated-highlight: #24242f;
+  --background-elevated-press: #13131a;
+  --background-highlight: #24283b;
+  --background-press: #13131a;
+  --background-tinted-base: rgba(192, 202, 245, 0.07);
+  --background-tinted-highlight: rgba(192, 202, 245, 0.12);
+  --background-tinted-press: rgba(192, 202, 245, 0.04);
+
+  --text-base: #c0caf5;
+  --text-subdued: #565f89;
+  --text-bright-accent: #7aa2f7;
+
+  --essential-base: #c0caf5;
+  --essential-subdued: #565f89;
+  --essential-bright-accent: #7aa2f7;
+  --decorative-base: #c0caf5;
+  --decorative-subdued: #6d728e;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #c0caf5;
+  --spice-subtext: #565f89;
+  --spice-main: #1a1b26;
+  --spice-sidebar: #16161e;
+  --spice-player: #1a1b26;
+  --spice-card: #24283b;
+  --spice-button: #7aa2f7;
+  --spice-button-active: #bb9af7;
+  --spice-button-disabled: #565f89;
+  --spice-tab-active: #24283b;
+  --spice-rgb-text: 192, 202, 245;
+  --spice-rgb-main: 26, 27, 38;
+}
+
+[data-testid="card-container"] {
+  border-radius: 10px;
+  transition: background-color 160ms ease;
+}
+
+[data-testid="now-playing-widget"] {
+  gap: 12px;
+}

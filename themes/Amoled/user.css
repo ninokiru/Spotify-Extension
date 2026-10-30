@@ -1,0 +1,47 @@
+/* Amoled
+   Theme Amoled — Nền đen tuyệt đối tiết kiệm pin, giữ nguyên sắc xanh Spotify. */
+
+:root {
+  --background-base: #000000;
+  --background-elevated-base: #000000;
+  --background-elevated-highlight: #141414;
+  --background-elevated-press: #000000;
+  --background-highlight: #121212;
+  --background-press: #0a0a0a;
+  --background-tinted-base: rgba(255, 255, 255, 0.07);
+  --background-tinted-highlight: rgba(255, 255, 255, 0.12);
+  --background-tinted-press: rgba(255, 255, 255, 0.04);
+
+  --text-base: #ffffff;
+  --text-subdued: #a0a0a0;
+  --text-bright-accent: #1ed760;
+
+  --essential-base: #ffffff;
+  --essential-subdued: #a0a0a0;
+  --essential-bright-accent: #1ed760;
+  --decorative-base: #ffffff;
+  --decorative-subdued: #808080;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #ffffff;
+  --spice-subtext: #a0a0a0;
+  --spice-main: #000000;
+  --spice-sidebar: #000000;
+  --spice-player: #000000;
+  --spice-card: #121212;
+  --spice-button: #1ed760;
+  --spice-button-active: #1db954;
+  --spice-button-disabled: #a0a0a0;
+  --spice-tab-active: #121212;
+  --spice-rgb-text: 255, 255, 255;
+  --spice-rgb-main: 0, 0, 0;
+}
+
+[data-testid="card-container"] {
+  border-radius: 4px;
+  transition: background-color 140ms ease;
+}
+
+[data-testid="now-playing-widget"] {
+  gap: 10px;
+}

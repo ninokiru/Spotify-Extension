@@ -19,10 +19,17 @@ Usage:
   sxe uninstall           Alias of restore, plus remove leftover files
   sxe config              Print the current config
   sxe config <key> <val>  Change one setting (extensions, snippets, theme, colors.*, language, safe_mode, check_update, spotify_path)
+  sxe theme list          List themes
+  sxe theme set <name>    Pick a theme (use "default" to clear it)
+  sxe ext list            List extensions
+  sxe ext on <id>         Enable an extension
+  sxe ext off <id>        Disable an extension
   sxe store list          List modules (add "all" to include the online catalogue)
   sxe store install <id>  Install a module
   sxe store uninstall <id> Remove a module
   sxe store update <id>   Update a module to the newest version
+  sxe doctor              Print a diagnostics report
+  sxe restart             Restart Spotify
   sxe update              Check for a new release
   sxe update --yes        Download and install the new release
   sxe version             Print the version
@@ -91,6 +98,41 @@ Examples:
 
 		"error.generic": "Something went wrong: %s",
 		"error.needArg": "This command needs an argument: %s",
+
+		"theme.title":   "Themes",
+		"theme.active":  "active",
+		"theme.set":     "Theme set to %s. Run \"sxe apply\" to push it into Spotify.",
+		"theme.default": "default",
+		"theme.none":    "No theme found.",
+		"theme.bundled": "bundled",
+		"theme.user":    "installed",
+
+		"ext.title":  "Extensions",
+		"ext.on":     "Enabled %q. Run \"sxe apply\" to push it into Spotify.",
+		"ext.off":    "Disabled %q. Run \"sxe apply\" to push it into Spotify.",
+		"ext.none":   "No extensions found.",
+		"ext.notFound": "Extension %q was not found.",
+
+		"doctor.title":      "Diagnostics",
+		"doctor.installs":   "Spotify installs",
+		"doctor.backup":     "Backup",
+		"doctor.config":     "Config",
+		"doctor.runtime":    "Payload runtime",
+		"doctor.extensions": "Extensions",
+		"doctor.themes":     "Themes",
+		"doctor.snippets":   "Snippets",
+		"doctor.network":    "GitHub connection",
+		"doctor.running":    "Spotify process",
+		"doctor.ok":         "ok",
+		"doctor.missing":    "missing",
+		"doctor.warn":       "check this",
+		"doctor.none":       "none",
+		"doctor.count":      "%d found",
+		"doctor.yes":        "yes",
+		"doctor.no":         "no",
+
+		"restart.done":    "Spotify restarted.",
+		"restart.failed":  "Could not restart Spotify.",
 	},
 
 	vi: {
@@ -104,10 +146,17 @@ Cách dùng:
   sxe uninstall           Giống restore, kèm dọn file thừa
   sxe config              In cấu hình hiện tại
   sxe config <khoá> <giá> Sửa một mục (extensions, snippets, theme, colors.*, language, safe_mode, check_update, spotify_path)
+  sxe theme list          Liệt kê theme
+  sxe theme set <tên>     Chọn theme (dùng "default" để bỏ chọn)
+  sxe ext list            Liệt kê extension
+  sxe ext on <id>         Bật một extension
+  sxe ext off <id>        Tắt một extension
   sxe store list          Liệt kê module (thêm "all" để gộp danh mục online)
   sxe store install <id>  Cài một module
   sxe store uninstall <id> Gỡ một module
   sxe store update <id>   Cập nhật module lên bản mới nhất
+  sxe doctor              In báo cáo chẩn đoán
+  sxe restart             Khởi động lại Spotify
   sxe update              Kiểm tra bản mới
   sxe update --yes        Tải và cài bản mới
   sxe version             In phiên bản
@@ -176,6 +225,41 @@ Ví dụ:
 
 		"error.generic": "Đã có lỗi xảy ra: %s",
 		"error.needArg": "Lệnh này cần thêm tham số: %s",
+
+		"theme.title":   "Theme",
+		"theme.active":  "đang dùng",
+		"theme.set":     "Đã đặt theme %s. Chạy \"sxe apply\" để đẩy vào Spotify.",
+		"theme.default": "mặc định",
+		"theme.none":    "Không tìm thấy theme nào.",
+		"theme.bundled": "đi kèm",
+		"theme.user":    "đã tải về",
+
+		"ext.title":    "Extension",
+		"ext.on":       "Đã bật %q. Chạy \"sxe apply\" để đẩy vào Spotify.",
+		"ext.off":      "Đã tắt %q. Chạy \"sxe apply\" để đẩy vào Spotify.",
+		"ext.none":     "Không tìm thấy extension nào.",
+		"ext.notFound": "Không có extension %q.",
+
+		"doctor.title":      "Chẩn đoán",
+		"doctor.installs":   "Bản Spotify",
+		"doctor.backup":     "Bản sao lưu",
+		"doctor.config":     "Cấu hình",
+		"doctor.runtime":    "Runtime payload",
+		"doctor.extensions": "Extension",
+		"doctor.themes":     "Theme",
+		"doctor.snippets":   "Đoạn CSS",
+		"doctor.network":    "Kết nối GitHub",
+		"doctor.running":    "Tiến trình Spotify",
+		"doctor.ok":         "ổn",
+		"doctor.missing":    "thiếu",
+		"doctor.warn":       "cần xem lại",
+		"doctor.none":       "không có",
+		"doctor.count":      "tìm thấy %d",
+		"doctor.yes":        "có",
+		"doctor.no":         "không",
+
+		"restart.done":   "Đã khởi động lại Spotify.",
+		"restart.failed": "Không khởi động lại được Spotify.",
 	},
 }
 

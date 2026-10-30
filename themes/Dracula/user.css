@@ -1,0 +1,51 @@
+/* Dracula
+   Theme Dracula — Nền tím than huyền bí với điểm nhấn hồng và tím tươi sáng. */
+
+:root {
+  --background-base: #282a36;
+  --background-elevated-base: #21222c;
+  --background-elevated-highlight: #32333c;
+  --background-elevated-press: #1c1d25;
+  --background-highlight: #44475a;
+  --background-press: #1e1f29;
+  --background-tinted-base: rgba(248, 248, 242, 0.07);
+  --background-tinted-highlight: rgba(248, 248, 242, 0.12);
+  --background-tinted-press: rgba(248, 248, 242, 0.04);
+
+  --text-base: #f8f8f2;
+  --text-subdued: #bfbfbf;
+  --text-bright-accent: #bd93f9;
+
+  --essential-base: #f8f8f2;
+  --essential-subdued: #bfbfbf;
+  --essential-bright-accent: #bd93f9;
+  --decorative-base: #f8f8f2;
+  --decorative-subdued: #909194;
+
+  /* Spicetify-compatible aliases, so existing colour schemes still apply */
+  --spice-text: #f8f8f2;
+  --spice-subtext: #bfbfbf;
+  --spice-main: #282a36;
+  --spice-sidebar: #21222c;
+  --spice-player: #282a36;
+  --spice-card: #44475a;
+  --spice-button: #bd93f9;
+  --spice-button-active: #ff79c6;
+  --spice-button-disabled: #bfbfbf;
+  --spice-tab-active: #44475a;
+  --spice-rgb-text: 248, 248, 242;
+  --spice-rgb-main: 40, 42, 54;
+}
+
+[data-testid="card-container"] {
+  border-radius: 10px;
+  transition: background-color 160ms ease;
+}
+
+[data-testid="control-button-playpause"] {
+  transition: transform 140ms ease;
+}
+
+[data-testid="control-button-playpause"]:hover {
+  transform: scale(1.06);
+}
