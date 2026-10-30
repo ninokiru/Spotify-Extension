@@ -282,8 +282,8 @@ func Find(id string) *Module {
 	return nil
 }
 
-// Status computes installed/enabled/update state for one module.
-func Status(module *Module, enabledExtensions, enabledSnippets []string, activeTheme string) Status {
+// ModuleStatus computes installed/enabled/update state for one module.
+func ModuleStatus(module *Module, enabledExtensions, enabledSnippets []string, activeTheme string) Status {
 	status := Status{Installed: fileExists(module)}
 
 	onDisk := installedVersion(module)

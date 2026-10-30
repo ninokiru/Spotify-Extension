@@ -389,7 +389,7 @@ func cmdStore(lang string, cfg config.Config, args []string) int {
 
 		for i := range modules {
 			module := &modules[i]
-			status := store.Status(module, cfg.Extensions, cfg.Snippets, cfg.Theme)
+			status := store.ModuleStatus(module, cfg.Extensions, cfg.Snippets, cfg.Theme)
 
 			marker := "      "
 			switch {
