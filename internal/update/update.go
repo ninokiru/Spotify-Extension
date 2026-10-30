@@ -3,6 +3,7 @@ package update
 import (
 	"archive/zip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -58,7 +59,7 @@ func Latest() (string, string, error) {
 // sxe.old.exe and removed on the next run.
 func Replace(lang, tag, url string) error {
 	if url == "" {
-		return fmt.Errorf(msg.Get(lang, "update.notfound"))
+		return errors.New(msg.Get(lang, "update.notfound"))
 	}
 
 	fmt.Println(msg.Get(lang, "update.download", tag))
@@ -138,7 +139,7 @@ func Replace(lang, tag, url string) error {
 	}
 
 	if failed {
-		return fmt.Errorf(msg.Get(lang, "update.locked"))
+		return errors.New(msg.Get(lang, "update.locked"))
 	}
 
 	// Clean up the parked old binary when the filesystem allows it.

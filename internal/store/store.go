@@ -474,18 +474,30 @@ func mergeVersions(base, remote []Module) []Module {
 	return modules
 }
 
+// compareVersions orders two version strings the way semver does: build
+// metadata is ignored and a pre-release tag is older than the release.
 func compareVersions(left, right string) int {
-	parse := func(value string) []int {
-		parts := regexp.MustCompile(`[.\-+]`).Split(value, -1)
-		numbers := make([]int, len(parts))
-		for i, part := range parts {
-			numbers[i], _ = strconv.Atoi(part)
+	parse := func(value string) ([]int, string) {
+		if index := strings.Index(value, "+"); index >= 0 {
+			value = value[:index]
 		}
-		return numbers
+		pre := ""
+		if index := strings.Index(value, "-"); index >= 0 {
+			pre = value[index+1:]
+			value = value[:index]
+		}
+
+		numbers := []int{}
+		for _, part := range strings.Split(value, ".") {
+			number, _ := strconv.Atoi(part)
+			numbers = append(numbers, number)
+		}
+		return numbers, pre
 	}
 
-	a := parse(left)
-	b := parse(right)
+	a, aPre := parse(left)
+	b, bPre := parse(right)
+
 	length := len(a)
 	if len(b) > length {
 		length = len(b)
@@ -503,7 +515,17 @@ func compareVersions(left, right string) int {
 			return diff
 		}
 	}
-	return 0
+
+	switch {
+	case aPre == bPre:
+		return 0
+	case aPre == "":
+		return 1
+	case bPre == "":
+		return -1
+	default:
+		return strings.Compare(aPre, bPre)
+	}
 }
 
 func fileExists(module *Module) bool {

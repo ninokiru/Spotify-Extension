@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -275,7 +276,7 @@ func Set(cfg *Config, key, value string) error {
 	switch parts[0] {
 	case "language":
 		if value != "en" && value != "vi" {
-			return fmt.Errorf(msg.Get(cfg.Language, "config.badkey"), value)
+			return errors.New(msg.Get(cfg.Language, "config.badkey", value))
 		}
 		cfg.Language = value
 	case "spotify_path":
@@ -292,18 +293,18 @@ func Set(cfg *Config, key, value string) error {
 		cfg.Snippets = splitList(value)
 	case "colors":
 		if len(parts) != 2 {
-			return fmt.Errorf(msg.Get(cfg.Language, "config.badkey"), key)
+			return errors.New(msg.Get(cfg.Language, "config.badkey", key))
 		}
 		if !ValidColor(parts[1]) {
-			return fmt.Errorf(msg.Get(cfg.Language, "config.badkey"), key)
+			return errors.New(msg.Get(cfg.Language, "config.badkey", key))
 		}
 		hex := normalizeHex(value)
 		if hex == "" {
-			return fmt.Errorf(msg.Get(cfg.Language, "config.badkey"), value)
+			return errors.New(msg.Get(cfg.Language, "config.badkey", value))
 		}
 		cfg.Colors[parts[1]] = hex
 	default:
-		return fmt.Errorf(msg.Get(cfg.Language, "config.badkey"), key)
+		return errors.New(msg.Get(cfg.Language, "config.badkey", key))
 	}
 	return nil
 }
