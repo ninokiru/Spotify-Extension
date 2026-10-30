@@ -1,0 +1,95 @@
+{
+  "updatedAt": "2026-10-30T00:00:00Z",
+  "modules": [
+    {
+      "id": "adblock",
+      "name": "Adblock",
+      "author": "ninokiru",
+      "description": "Removes ad slots and sponsored cards in the Spotify client.",
+      "descriptionVi": "Ẩn quảng cáo và thẻ được tài trợ trong giao diện Spotify.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "shield",
+      "accent": ["#123a24", "#0d1f16"],
+      "files": [
+        {
+          "name": "adblock.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/adblock.js"
+        }
+      ]
+    },
+    {
+      "id": "auto-skip-explicit",
+      "name": "Auto skip explicit",
+      "author": "ninokiru",
+      "description": "Skips tracks marked explicit while playing.",
+      "descriptionVi": "Tự nhảy qua các bài hát có nhãn explicit khi đang phát.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "skip",
+      "accent": ["#3a2a12", "#1f160a"],
+      "files": [
+        {
+          "name": "auto-skip-explicit.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/auto-skip-explicit.js"
+        }
+      ]
+    },
+    {
+      "id": "volume-memory",
+      "name": "Volume memory",
+      "author": "ninokiru",
+      "description": "Restores the last volume level when Spotify starts.",
+      "descriptionVi": "Khôi phục mức âm lượng cũ mỗi khi mở Spotify.",
+      "version": "1.0.0",
+      "kind": "extension",
+      "downloads": 0,
+      "glyph": "wave",
+      "accent": ["#123040", "#0d1a22"],
+      "files": [
+        {
+          "name": "volume-memory.js",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/extensions/volume-memory.js"
+        }
+      ]
+    },
+    {
+      "id": "Night",
+      "name": "Night",
+      "author": "ninokiru",
+      "description": "Deep blue theme with softer text and rounder cards.",
+      "descriptionVi": "Theme xanh đen, chữ mềm, bo góc lớn hơn.",
+      "version": "1.0.0",
+      "kind": "theme",
+      "downloads": 0,
+      "glyph": "palette",
+      "accent": ["#1b2436", "#0d121c"],
+      "files": [
+        {
+          "name": "user.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/store/themes/night/user.css"
+        }
+      ]
+    },
+    {
+      "id": "rounded-covers",
+      "name": "Rounded covers",
+      "author": "ninokiru",
+      "description": "Rounds the album artwork and library rows.",
+      "descriptionVi": "Bo tròn ảnh bìa album và các dòng trong thư viện.",
+      "version": "1.0.0",
+      "kind": "snippet",
+      "downloads": 0,
+      "glyph": "wave",
+      "accent": ["#20242b", "#12151a"],
+      "files": [
+        {
+          "name": "rounded-covers.css",
+          "url": "https://raw.githubusercontent.com/ninokiru/Spotify-Extension/main/store/snippets/rounded-covers.css"
+        }
+      ]
+    }
+  ]
+}

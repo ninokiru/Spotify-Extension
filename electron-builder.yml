@@ -14,11 +14,13 @@ asarUnpack:
   - dist/payload/**
   - extensions/**
   - themes/**
+  - snippets/**
 
 files:
   - dist/**/*
   - extensions/**/*
   - themes/**/*
+  - snippets/**/*
   - package.json
 
 win:

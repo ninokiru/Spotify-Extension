@@ -1,7 +1,7 @@
 {
   "name": "spotify-extension",
   "productName": "Spotify Extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Themes, extensions and tweaks for the Spotify desktop client.",
   "author": {
     "name": "ninokiru",
@@ -26,5 +26,8 @@
     "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

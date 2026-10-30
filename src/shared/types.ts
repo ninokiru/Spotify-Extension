@@ -1,3 +1,5 @@
+import type { StoreCatalog } from "./modules";
+
 export type Language = "en" | "vi";
 
 export type InstallVariant = "normal" | "store";
@@ -52,16 +54,45 @@ export interface ThemeInfo {
   hasCss: boolean;
 }
 
+export interface SnippetInfo {
+  id: string;
+  name: string;
+  path: string;
+  bundled: boolean;
+  hasCss: boolean;
+}
+
 export interface AppSettings {
   language: Language;
   installId: string | null;
   /** Extra folders the user picked by hand. */
   customRoots: string[];
   extensions: string[];
+  snippets: string[];
   theme: string | null;
   colors: Record<string, string>;
   customCss: string;
   autoApply: boolean;
+  autoUpdate: boolean;
+  /** Skips extensions, tweaks and accent injection; only the panel loads. */
+  safeMode: boolean;
+}
+
+export type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "none"
+  | "downloading"
+  | "downloaded"
+  | "error"
+  | "disabled";
+
+export interface UpdateState {
+  status: UpdateStatus;
+  version: string | null;
+  percent: number;
+  detail: string | null;
 }
 
 export interface OpResult {
@@ -107,10 +138,23 @@ export interface BridgeApi {
     apply: (themeId: string | null) => Promise<OpResult>;
     openFolder: () => Promise<void>;
   };
+  store: {
+    catalog: () => Promise<StoreCatalog>;
+    install: (id: string) => Promise<OpResult>;
+    uninstall: (id: string) => Promise<OpResult>;
+    update: (id: string) => Promise<OpResult>;
+  };
   settings: {
     get: () => Promise<AppSettings>;
     patch: (patch: Partial<AppSettings>) => Promise<AppSettings>;
     openConfig: () => Promise<void>;
+  };
+  update: {
+    getState: () => Promise<UpdateState>;
+    check: () => Promise<UpdateState>;
+    download: () => Promise<UpdateState>;
+    install: () => Promise<void>;
+    onChange: (cb: (state: UpdateState) => void) => () => void;
   };
   events: {
     onProgress: (cb: (event: ProgressEvent) => void) => () => void;

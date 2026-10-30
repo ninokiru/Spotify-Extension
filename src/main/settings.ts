@@ -10,10 +10,13 @@ function defaultSettings(language: Language): AppSettings {
     installId: null,
     customRoots: [],
     extensions: [],
+    snippets: [],
     theme: null,
     colors: { ...DEFAULT_COLORS },
     customCss: "",
     autoApply: true,
+    autoUpdate: true,
+    safeMode: false,
   };
 }
 
@@ -42,10 +45,16 @@ function sanitize(raw: unknown, language: Language): AppSettings {
     extensions: Array.isArray(input.extensions)
       ? input.extensions.filter((item): item is string => typeof item === "string")
       : [],
+    snippets: Array.isArray(input.snippets)
+      ? input.snippets.filter((item): item is string => typeof item === "string")
+      : [],
     theme: typeof input.theme === "string" ? input.theme : null,
     colors,
     customCss: typeof input.customCss === "string" ? input.customCss : "",
     autoApply: typeof input.autoApply === "boolean" ? input.autoApply : base.autoApply,
+    autoUpdate:
+      typeof input.autoUpdate === "boolean" ? input.autoUpdate : base.autoUpdate,
+    safeMode: typeof input.safeMode === "boolean" ? input.safeMode : base.safeMode,
   };
 }
 

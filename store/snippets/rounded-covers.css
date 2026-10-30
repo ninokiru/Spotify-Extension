@@ -1,0 +1,12 @@
+/* Rounded covers
+   Bo tròn ảnh bìa album và mục trong thư viện. */
+
+img[class*="CoverArt"],
+[style*="cover-art"],
+[data-testid="cover-art-image"] {
+  border-radius: 10px !important;
+}
+
+[data-testid="tracklist-row"] img {
+  border-radius: 6px !important;
+}

@@ -1,0 +1,26 @@
+/* Night
+   Nền xanh đen, chữ mềm, bo góc lớn hơn cho toàn bộ giao diện.
+   Cài từ Kho tiện ích trong app. */
+
+:root {
+  --background-base: #0a0c10;
+  --background-elevated-base: #10131a;
+  --background-elevated-highlight: #1a1f28;
+  --background-highlight: #161a22;
+  --text-base: #e8ecf2;
+  --text-subdued: #97a0b0;
+  --text-bright-accent: #6ee7a8;
+}
+
+main div[class*="rounded"],
+main [class*="cardContainer"] {
+  border-radius: 14px !important;
+}
+
+[data-testid="control-button-playpause"] {
+  transform: scale(1.04);
+}
+
+[data-testid="now-playing-widget"] {
+  background: linear-gradient(180deg, rgba(10, 12, 16, 0) 0%, rgba(10, 12, 16, 0.6) 100%);
+}

@@ -8,7 +8,18 @@ import {
   restoreBackup,
 } from "./backup";
 import { listExtensions, type ExtensionDir } from "./extensions";
+import { listSnippets, readSnippetCss, type SnippetDir } from "./snippets";
 import { buildColorsCss, listThemes, readThemeCss, type ThemeDir } from "./themes";
+import {
+  bundledCatalog,
+  listLocalModules,
+  mergeModules,
+  readRegistry,
+  removeModuleFiles,
+  statusOf,
+  writeModuleFiles,
+  type StoreDirs,
+} from "./store";
 import { patchHtml, removePayload, unpatchHtml, writePayload } from "./apply";
 import { SXE_DIR } from "./constants";
 import { EngineError, toErrorCode } from "./errors";
@@ -17,9 +28,11 @@ import type {
   ExtensionInfo,
   OpResult,
   ProgressEvent,
+  SnippetInfo,
   SpotifyInstall,
   ThemeInfo,
 } from "../shared/types";
+import type { ModuleEntry, StoreCatalog } from "../shared/modules";
 
 export interface EngineOptions {
   appRoot: string;
@@ -51,6 +64,25 @@ export class Engine {
     return path.join(this.options.userData, "themes");
   }
 
+  get bundledSnippetsDir(): string {
+    return path.join(this.options.appRoot, "snippets");
+  }
+
+  get userSnippetsDir(): string {
+    return path.join(this.options.userData, "snippets");
+  }
+
+  private get storeDirs(): StoreDirs {
+    return {
+      bundledExtensions: this.bundledExtensionsDir,
+      userExtensions: this.userExtensionsDir,
+      bundledThemes: this.bundledThemesDir,
+      userThemes: this.userThemesDir,
+      bundledSnippets: this.bundledSnippetsDir,
+      userSnippets: this.userSnippetsDir,
+    };
+  }
+
   get bundledExtensionsDir(): string {
     return path.join(this.options.appRoot, "extensions");
   }
@@ -63,6 +95,7 @@ export class Engine {
     await ensureDir(this.backupRoot);
     await ensureDir(this.userExtensionsDir);
     await ensureDir(this.userThemesDir);
+    await ensureDir(this.userSnippetsDir);
   }
 
   async detect(): Promise<SpotifyInstall[]> {
@@ -78,6 +111,47 @@ export class Engine {
 
   async themes(): Promise<ThemeInfo[]> {
     return listThemes(this.themeDirs());
+  }
+
+  async snippets(settings: AppSettings): Promise<SnippetInfo[]> {
+    return listSnippets(this.snippetDirs());
+  }
+
+  /** Catalogue shown in the module store: bundled, remote and local files. */
+  async catalog(repo: string, settings: AppSettings): Promise<StoreCatalog> {
+    const registry = await readRegistry(repo);
+    const local = await listLocalModules(this.storeDirs);
+
+    const known = mergeModules(bundledCatalog(), registry.modules);
+    const knownIds = new Set(known.map((entry) => entry.id));
+    const extra = local.filter((entry) => !knownIds.has(entry.id));
+    const modules = mergeModules(known, extra);
+
+    const status: StoreCatalog["status"] = {};
+    for (const entry of modules) {
+      status[entry.id] = await statusOf(this.storeDirs, entry, {
+        extensions: settings.extensions,
+        snippets: settings.snippets,
+        theme: settings.theme,
+      });
+    }
+
+    return {
+      modules,
+      status,
+      updatedAt: new Date().toISOString(),
+      remote: registry.reachable,
+    };
+  }
+
+  async installFiles(entry: ModuleEntry): Promise<void> {
+    // Bundled modules already live in the app folder, only downloads are copied.
+    if (entry.files.every((file) => file.url.length === 0)) return;
+    await writeModuleFiles({ dirs: this.storeDirs, entry });
+  }
+
+  async uninstallFiles(entry: ModuleEntry): Promise<void> {
+    await removeModuleFiles(this.storeDirs, entry);
   }
 
   async install(installId: string, settings: AppSettings): Promise<OpResult> {
@@ -161,17 +235,25 @@ export class Engine {
     return result.ok;
   }
 
+  /** User folders come first so a downloaded update wins over the bundled copy. */
   private extensionDirs(): ExtensionDir[] {
     return [
-      { dir: this.bundledExtensionsDir, bundled: true },
       { dir: this.userExtensionsDir, bundled: false },
+      { dir: this.bundledExtensionsDir, bundled: true },
     ];
   }
 
   private themeDirs(): ThemeDir[] {
     return [
-      { dir: this.bundledThemesDir, bundled: true },
       { dir: this.userThemesDir, bundled: false },
+      { dir: this.bundledThemesDir, bundled: true },
+    ];
+  }
+
+  private snippetDirs(): SnippetDir[] {
+    return [
+      { dir: this.userSnippetsDir, bundled: false },
+      { dir: this.bundledSnippetsDir, bundled: true },
     ];
   }
 
@@ -196,6 +278,11 @@ export class Engine {
     if (settings.theme) {
       const theme = (await this.themes()).find((item) => item.id === settings.theme);
       if (theme) parts.push(await readThemeCss(theme.path));
+    }
+
+    for (const snippet of await this.snippets(settings)) {
+      if (!settings.snippets.includes(snippet.id)) continue;
+      parts.push(await readSnippetCss(snippet.path));
     }
 
     if (settings.customCss.trim().length > 0) {
@@ -223,6 +310,8 @@ export class Engine {
       userCss,
       extensions: enabled,
       appVersion: this.options.appVersion,
+      language: settings.language,
+      safeMode: settings.safeMode,
     });
 
     this.progress("apply", "progress.patch", 85);

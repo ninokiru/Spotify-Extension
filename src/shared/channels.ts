@@ -20,9 +20,20 @@ export const IPC = {
   applyTheme: "themes:apply",
   openThemes: "themes:open-folder",
 
+  storeCatalog: "store:catalog",
+  storeInstall: "store:install",
+  storeUninstall: "store:uninstall",
+  storeUpdate: "store:update",
+
   getSettings: "settings:get",
   patchSettings: "settings:patch",
   openConfig: "settings:open-config",
+
+  getUpdateState: "update:get-state",
+  checkUpdate: "update:check",
+  downloadUpdate: "update:download",
+  installUpdate: "update:install",
+  updateState: "events:update-state",
 
   progress: "events:progress",
 } as const;

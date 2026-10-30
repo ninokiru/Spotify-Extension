@@ -4,14 +4,42 @@ import { BrowserWindow, dialog, ipcMain, shell } from "electron";
 import type { Engine } from "../engine";
 import { ensureDir, exists } from "../engine/fsx";
 import { IPC } from "../shared/channels";
+import { REPO_URL } from "../shared/links";
 import type { AppSettings, OpResult } from "../shared/types";
+import type { ModuleKind } from "../shared/modules";
 import type { SettingsStore } from "./settings";
+import type { Updater } from "./updater";
 
 export interface IpcContext {
   engine: Engine;
   settings: SettingsStore;
+  updater: Updater;
   appVersion: string;
   getWindow: () => BrowserWindow | null;
+}
+
+function enablePatch(
+  settings: AppSettings,
+  kind: ModuleKind,
+  id: string,
+): Partial<AppSettings> {
+  if (kind === "theme") return { theme: id };
+  if (kind === "snippet") {
+    return { snippets: [...new Set([...settings.snippets, id])] };
+  }
+  return { extensions: [...new Set([...settings.extensions, id])] };
+}
+
+function disablePatch(
+  settings: AppSettings,
+  kind: ModuleKind,
+  id: string,
+): Partial<AppSettings> {
+  if (kind === "theme") return { theme: settings.theme === id ? null : settings.theme };
+  if (kind === "snippet") {
+    return { snippets: settings.snippets.filter((item) => item !== id) };
+  }
+  return { extensions: settings.extensions.filter((item) => item !== id) };
 }
 
 function delay(ms: number): Promise<void> {
@@ -199,6 +227,79 @@ export function registerIpc(ctx: IpcContext): void {
 
   ipcMain.handle(IPC.listThemes, async () => engine.themes());
 
+  ipcMain.handle(IPC.storeCatalog, async () => {
+    const current = await syncRoots(await settings.read());
+    return engine.catalog(REPO_URL, current);
+  });
+
+  ipcMain.handle(IPC.storeInstall, async (_event, id: unknown): Promise<OpResult> => {
+    if (typeof id !== "string") return { ok: false, code: "store.error.notFound" };
+
+    const current = await syncRoots(await settings.read());
+    const catalog = await engine.catalog(REPO_URL, current);
+    const entry = catalog.modules.find((item) => item.id === id);
+    if (!entry) return { ok: false, code: "store.error.notFound" };
+
+    try {
+      await engine.installFiles(entry);
+    } catch (error) {
+      return { ok: false, code: "store.error.download", detail: String(error) };
+    }
+
+    const next = await settings.patch(enablePatch(current, entry.kind, entry.id));
+    await syncRoots(next);
+
+    if (next.installId) {
+      const applied = await engine.install(next.installId, next);
+      if (!applied.ok) return applied;
+    }
+
+    return { ok: true, code: "store.install.done" };
+  });
+
+  ipcMain.handle(IPC.storeUninstall, async (_event, id: unknown): Promise<OpResult> => {
+    if (typeof id !== "string") return { ok: false, code: "store.error.notFound" };
+
+    const current = await syncRoots(await settings.read());
+    const catalog = await engine.catalog(REPO_URL, current);
+    const entry = catalog.modules.find((item) => item.id === id);
+    if (!entry) return { ok: false, code: "store.error.notFound" };
+
+    await engine.uninstallFiles(entry);
+
+    const next = await settings.patch(disablePatch(current, entry.kind, entry.id));
+    await syncRoots(next);
+
+    if (next.installId) {
+      const applied = await engine.install(next.installId, next);
+      if (!applied.ok) return applied;
+    }
+
+    return { ok: true, code: "store.uninstall.done" };
+  });
+
+  ipcMain.handle(IPC.storeUpdate, async (_event, id: unknown): Promise<OpResult> => {
+    if (typeof id !== "string") return { ok: false, code: "store.error.notFound" };
+
+    const current = await syncRoots(await settings.read());
+    const catalog = await engine.catalog(REPO_URL, current);
+    const entry = catalog.modules.find((item) => item.id === id);
+    if (!entry) return { ok: false, code: "store.error.notFound" };
+
+    try {
+      await engine.installFiles(entry);
+    } catch (error) {
+      return { ok: false, code: "store.error.download", detail: String(error) };
+    }
+
+    if (current.installId) {
+      const applied = await engine.install(current.installId, current);
+      if (!applied.ok) return applied;
+    }
+
+    return { ok: true, code: "store.update.done" };
+  });
+
   ipcMain.handle(IPC.applyTheme, async (_event, themeId: unknown): Promise<OpResult> => {
     const current = await settings.read();
     const theme = typeof themeId === "string" ? themeId : null;
@@ -233,5 +334,12 @@ export function registerIpc(ctx: IpcContext): void {
     const next = await settings.patch(patch as Partial<AppSettings>);
     await syncRoots(next);
     return next;
+  });
+
+  ipcMain.handle(IPC.getUpdateState, () => ctx.updater.get());
+  ipcMain.handle(IPC.checkUpdate, () => ctx.updater.check());
+  ipcMain.handle(IPC.downloadUpdate, () => ctx.updater.download());
+  ipcMain.handle(IPC.installUpdate, () => {
+    ctx.updater.install();
   });
 }

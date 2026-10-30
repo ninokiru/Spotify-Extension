@@ -5,6 +5,7 @@ import { IPC } from "../shared/channels";
 import type { Language } from "../shared/types";
 import { registerIpc } from "./ipc";
 import { SettingsStore } from "./settings";
+import { Updater } from "./updater";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -90,9 +91,14 @@ if (!app.requestSingleInstanceLock()) {
     engine.setCustomRoots(current.customRoots);
     await engine.prepare();
 
+    const updater = new Updater((state) => {
+      mainWindow?.webContents.send(IPC.updateState, state);
+    });
+
     registerIpc({
       engine,
       settings,
+      updater,
       appVersion: app.getVersion(),
       getWindow: () => mainWindow,
     });
@@ -101,6 +107,10 @@ if (!app.requestSingleInstanceLock()) {
 
     if (current.autoApply && current.installId) {
       void engine.autoReapply(current.installId, current);
+    }
+
+    if (current.autoUpdate) {
+      setTimeout(() => void updater.check(), 3000);
     }
   });
 

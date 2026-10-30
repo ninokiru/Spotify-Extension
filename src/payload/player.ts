@@ -78,6 +78,11 @@ export function startDiscovery(): void {
   tick();
 }
 
+/** True once Spotify's own player module has been found. */
+export function available(): boolean {
+  return api !== null;
+}
+
 async function invoke(name: string, ...args: unknown[]): Promise<boolean> {
   if (!api) return false;
   const fn = api[name];
@@ -147,7 +152,16 @@ function trackFrom(value: unknown): TrackInfo | null {
       str(metadata.image_xlarge_url) ??
       str(metadata.cover) ??
       null,
+    explicit: explicitOf(metadata),
   };
+}
+
+function explicitOf(metadata: Rec): boolean | null {
+  const value = metadata.is_explicit ?? metadata.explicit;
+  if (typeof value === "boolean") return value;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return null;
 }
 
 function sessionTrack(): TrackInfo | null {
@@ -169,6 +183,7 @@ function sessionTrack(): TrackInfo | null {
         : [],
       album: metadata.album ?? "",
       artwork: last?.src ?? null,
+      explicit: null,
     };
   } catch {
     return null;

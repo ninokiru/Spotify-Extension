@@ -1,10 +1,14 @@
 import type { SpotifyExtensionApi } from "../shared/api";
+import { initAccent } from "./accent";
 import { getRequire, installChunkHooks } from "./chunks";
 import { observe, waitFor } from "./dom";
-import { loadExtensionScripts, type ManifestExtension } from "./extensions";
+import { loadExtensionScripts } from "./extensions";
 import { scanCache } from "./internal";
 import { registerKey } from "./keys";
+import { manifestRepo, readManifest } from "./manifest";
+import { createPanel } from "./panel";
 import {
+  available,
   getVolume,
   next,
   on as onPlayer,
@@ -18,22 +22,11 @@ import {
   toggle,
   track,
 } from "./player";
+import { getSettings, initSettings, onSettingsChange, setSetting } from "./settings";
+import { initLanguage } from "./text";
+import { installTweaks } from "./tweaks";
 import { addCss, ensureStyles, toast } from "./ui";
-
-interface Manifest {
-  version?: string;
-  extensions?: ManifestExtension[];
-}
-
-/**
- * Written by the patcher as `sxe/manifest.js` and loaded before this script.
- * Read from the global instead of fetch(), which the client's file:// origin
- * blocks.
- */
-function readManifest(): Manifest {
-  const value = (window as unknown as { __sxeManifest?: Manifest }).__sxeManifest;
-  return value !== null && typeof value === "object" ? value : {};
-}
+import { checkUpdate, initUpdate, onUpdateChange, updateInfo } from "./update";
 
 const appState = { version: "0.0.0" };
 const loadedExtensions: string[] = [];
@@ -86,6 +79,7 @@ const api: SpotifyExtensionApi = {
     seek,
     setVolume,
     getVolume,
+    available,
     on: onPlayer,
   },
   dom: {
@@ -102,6 +96,16 @@ const api: SpotifyExtensionApi = {
   events: {
     on: onBusEvent,
     emit: emitBusEvent,
+  },
+  settings: {
+    get: getSettings,
+    set: setSetting,
+    onChange: onSettingsChange,
+  },
+  update: {
+    check: checkUpdate,
+    current: updateInfo,
+    onChange: onUpdateChange,
   },
   internal: {
     get require() {
@@ -144,6 +148,13 @@ function domReady(): Promise<void> {
   });
 }
 
+function scheduleUpdateCheck(): void {
+  if (!getSettings().updateCheck) return;
+  window.setTimeout(() => {
+    if (getSettings().updateCheck) void checkUpdate();
+  }, 4000);
+}
+
 async function boot(): Promise<void> {
   await domReady();
 
@@ -152,12 +163,38 @@ async function boot(): Promise<void> {
     appState.version = manifest.version;
   }
 
+  const safeMode = manifest.safeMode === true;
+
+  initLanguage(manifest.language);
+  initSettings(manifest.settings);
+  initAccent(safeMode);
+
+  const repo = manifestRepo(manifest);
+  initUpdate({ version: appState.version, repo });
+
   startDiscovery();
 
   await waitFor('main, #main, [data-testid="now-playing-widget"]', 6000);
 
   resolveReady();
   document.dispatchEvent(new CustomEvent("sxe:ready", { detail: api }));
+
+  if (!safeMode) installTweaks();
+
+  try {
+    createPanel({
+      version: appState.version,
+      repo,
+      safeMode,
+      extensions: () => loadedExtensions,
+    });
+  } catch (error) {
+    console.error("[sxe] panel failed", error);
+  }
+
+  scheduleUpdateCheck();
+
+  if (safeMode) return;
 
   const entries = Array.isArray(manifest.extensions) ? manifest.extensions : [];
   await loadExtensionScripts(entries, loadedExtensions);

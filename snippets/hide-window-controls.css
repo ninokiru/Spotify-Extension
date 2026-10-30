@@ -1,0 +1,10 @@
+/* Hide window controls
+   Ẩn nút cửa sổ Windows của Spotify, thanh phát chiếm hết màn hình.
+   File này chỉ là CSS thuần — sửa thoải mái, hoặc copy sang snippets/ trong thư mục dữ liệu. */
+
+.window-controls,
+[data-testid="window-controls"],
+.main-window-controls,
+.Root__windowControls {
+  display: none !important;
+}

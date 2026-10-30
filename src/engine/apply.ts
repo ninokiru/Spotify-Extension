@@ -10,6 +10,8 @@ import {
 import { SXE_DIR, SXE_MARKER_END, SXE_MARKER_START } from "./constants";
 import { EngineError } from "./errors";
 import type { ExtensionInfo } from "../shared/types";
+import { DEFAULT_RUNTIME_SETTINGS } from "../shared/defaults";
+import { REPO_URL } from "../shared/links";
 
 export interface ApplyInput {
   xpuiPath: string;
@@ -18,6 +20,8 @@ export interface ApplyInput {
   userCss: string;
   extensions: ExtensionInfo[];
   appVersion: string;
+  language: string;
+  safeMode: boolean;
 }
 
 const BLOCK_PATTERN = /<!--\s*sxe:start\s*-->[\s\S]*?<!--\s*sxe:end\s*-->\s*/gi;
@@ -52,6 +56,10 @@ export async function writePayload(input: ApplyInput): Promise<void> {
 
   const manifest = {
     version: input.appVersion,
+    repo: REPO_URL,
+    language: input.language,
+    safeMode: input.safeMode,
+    settings: DEFAULT_RUNTIME_SETTINGS,
     generatedAt: new Date().toISOString(),
     extensions: [] as { id: string; name: string; file: string }[],
   };
