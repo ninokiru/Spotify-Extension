@@ -1,4 +1,4 @@
-use crate::model::Install;
+use crate::model::{BackupInfo, Install};
 use crate::paths;
 use crate::util;
 use serde::{Deserialize, Serialize};
@@ -167,7 +167,11 @@ fn ensure_at(root: &Path, install: &Install) -> Result<Manifest, String> {
     fs::create_dir_all(&base)
         .map_err(|error| format!("Could not create {}: {}", base.display(), error))?;
 
-    let key = version_key(&install.version);
+    let key = snapshot_key(install);
+    if let Some(existing) = read_manifest_file(&base.join(&key).join(paths::BACKUP_MANIFEST)) {
+        return Ok(existing);
+    }
+
     let staging = base.join(format!(".staging-{}", key));
     util::remove_dir(&staging);
 
@@ -640,4 +644,79 @@ mod tests {
 
         let _ = fs::remove_dir_all(&base);
     }
+}
+
+/// Returns the stored backups of one install, newest first.
+pub fn list_backups(install: &Install) -> Vec<BackupInfo> {
+    list_snapshots_at(&backups_root(), &install.id)
+        .into_iter()
+        .rev()
+        .map(|snapshot| BackupInfo {
+            version: snapshot.manifest.version.clone(),
+            created_at: snapshot.manifest.created_at.clone(),
+            files: snapshot.manifest.files,
+            spa: snapshot.manifest.spa,
+            current: snapshot.manifest.version == install.version,
+        })
+        .collect()
+}
+
+/// Deletes an old backup. The backup of the running version is kept so there
+/// is always a way back.
+pub fn delete_backup(install: &Install, version: &str) -> Result<(), String> {
+    if version == install.version {
+        return Err("The backup of the running version cannot be deleted.".into());
+    }
+    let dir = version_dir(&backups_root(), &install.id, version);
+    if !util::is_dir(&dir) {
+        return Err("Backup not found.".into());
+    }
+    util::remove_dir(&dir);
+    Ok(())
+}
+
+/// Restores one backup. Only the snapshot matching the running version is
+/// accepted, so an old client can never be copied over the new one.
+pub fn restore_version(install: &Install, version: &str) -> Result<bool, String> {
+    if version != install.version {
+        return Err("Only the backup of the running version can be restored.".into());
+    }
+    restore(install)
+}
+
+/// Folder name for one snapshot. An unreadable version falls back to a hash
+/// of the client source, so two different builds never share one folder.
+fn snapshot_key(install: &Install) -> String {
+    if !install.version.is_empty() {
+        return version_key(&install.version);
+    }
+
+    let packed = Path::new(install.root.as_str())
+        .join("Apps")
+        .join("xpui.spa");
+    let source = if util::is_file(&packed) {
+        util::packed_fingerprint("", &packed)
+    } else {
+        let index = Path::new(install.xpui_path.as_str()).join("index.html");
+        match fs::metadata(&index) {
+            Ok(meta) => format!(
+                "{}:{}",
+                meta.len(),
+                meta.modified()
+                    .ok()
+                    .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|duration| duration.as_secs())
+                    .unwrap_or(0)
+            ),
+            Err(_) => String::new(),
+        }
+    };
+
+    if source.is_empty() {
+        return version_key("");
+    }
+    let hash = source
+        .bytes()
+        .fold(0u32, |acc, byte| acc.wrapping_mul(31).wrapping_add(u32::from(byte)));
+    format!("{}-{:08x}", version_key(""), hash)
 }

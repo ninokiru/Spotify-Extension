@@ -45,6 +45,9 @@ fn main() {
             commands::delete_css_file,
             commands::set_snippet_enabled,
             commands::import_spicetify_theme,
+            commands::list_backups,
+            commands::delete_backup,
+            commands::restore_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Spotify Extension");

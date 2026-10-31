@@ -1,4 +1,4 @@
-use crate::model::{Config, CssContent, CssFile, DiagnosticRow, Install, Module, Overview, Report, ThemeInfo};
+use crate::model::{BackupInfo, Config, CssContent, CssFile, DiagnosticRow, Install, Module, Overview, Report, ThemeInfo};
 use crate::{apply, backup, config, detect, paths, process, store, themes, util};
 use std::path::PathBuf;
 
@@ -165,7 +165,10 @@ pub fn install_module(id: String) -> Report {
 }
 
 #[tauri::command(async)]
-pub fn remove_module(id: String) -> Report {
+pub fn remove_module(id: String, confirm: bool) -> Report {
+    if !confirm {
+        return Report::coded("confirm-required", "Confirmation required.");
+    }
     let mut config = config::load();
     if let Err(error) = store::remove(&id, &mut config) {
         return Report::error(error);
@@ -345,7 +348,10 @@ pub fn save_css_file(id: String, content: String) -> Report {
 }
 
 #[tauri::command(async)]
-pub fn delete_css_file(id: String) -> Report {
+pub fn delete_css_file(id: String, confirm: bool) -> Report {
+    if !confirm {
+        return Report::coded("confirm-required", "Confirmation required.");
+    }
     if id == "user" {
         return Report::coded("protected", "The main user.css cannot be deleted.");
     }
@@ -385,6 +391,46 @@ pub fn import_spicetify_theme(path: String) -> Report {
             Ok(()) => Report::ok(id),
             Err(error) => Report::error(error),
         },
+        Err(error) => Report::error(error),
+    }
+}
+
+/* ---------- Backups ---------- */
+
+#[tauri::command(async)]
+pub fn list_backups(install_id: String) -> Vec<BackupInfo> {
+    match find_install(&install_id) {
+        Some(install) => backup::list_backups(&install),
+        None => Vec::new(),
+    }
+}
+
+#[tauri::command(async)]
+pub fn delete_backup(install_id: String, version: String) -> Report {
+    let Some(install) = find_install(&install_id) else {
+        return Report::coded("not-found", "Spotify install not found.");
+    };
+    match backup::delete_backup(&install, &version) {
+        Ok(()) => Report::ok(""),
+        Err(error) => Report::error(error),
+    }
+}
+
+#[tauri::command(async)]
+pub fn restore_backup(install_id: String, version: String, force: bool) -> Report {
+    let Some(install) = find_install(&install_id) else {
+        return Report::coded("not-found", "Spotify install not found.");
+    };
+    if !force && process::running() {
+        return Report::coded("spotify-running", "Close Spotify before restoring.");
+    }
+    match backup::restore_version(&install, &version) {
+        Ok(true) => {
+            apply::remove_payload(&install);
+            let _ = apply::unpatch_html(&install);
+            Report::ok("")
+        }
+        Ok(false) => Report::coded("no-backup", "Backup not found."),
         Err(error) => Report::error(error),
     }
 }

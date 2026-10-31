@@ -132,3 +132,13 @@ impl Report {
         Self { ok: false, code: "error".into(), message: message.into() }
     }
 }
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupInfo {
+    pub version: String,
+    pub created_at: String,
+    pub files: usize,
+    pub spa: bool,
+    pub current: bool,
+}
