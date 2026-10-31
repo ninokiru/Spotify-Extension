@@ -75,6 +75,8 @@ const DICT = {
     'overview.opening': 'Đang mở…',
     'overview.warnRunning': 'Thay đổi chỉ có hiệu lực sau khi khởi động lại.',
     'overview.warnSafe': 'Chế độ an toàn đang bật.',
+    'overview.noBackup': 'Chưa có',
+    'overview.warnSpa': 'Bản cài dạng gói xpui.spa — lần áp dụng đầu sẽ giải nén ra Apps\\xpui, gói gốc giữ nguyên.',
     'overview.turnOff': 'Tắt',
     'overview.restartNow': 'Khởi động lại',
     'overview.unsupported': 'Bản Spotify này không hỗ trợ.',
@@ -279,6 +281,8 @@ const DICT = {
     'overview.opening': 'Opening…',
     'overview.warnRunning': 'Changes take effect after a restart.',
     'overview.warnSafe': 'Safe mode is on.',
+    'overview.noBackup': 'None',
+    'overview.warnSpa': 'This client ships as xpui.spa — the first apply extracts it into Apps\\xpui and leaves the archive untouched.',
     'overview.turnOff': 'Turn off',
     'overview.restartNow': 'Restart',
     'overview.unsupported': 'This Spotify build is not supported.',
@@ -875,7 +879,7 @@ async function demoCall(name, args) {
   switch (name) {
     case 'get_overview':
       return {
-        version: '0.4.0',
+        version: '0.0.1',
         dataDir: 'C:\\Users\\Minh\\AppData\\Roaming\\Spotify Extension',
         config: demoConfig(),
         installs: DEMO.installs.map(function (item) { return Object.assign({}, item); })
@@ -1333,6 +1337,9 @@ function warningBanners(install) {
     list.appendChild(makeBanner('warn', 'alert', t('overview.warnRunning'), t('overview.restartNow'), function () {
       runInstallAction('restart');
     }));
+  }
+  if (install.spa) {
+    list.appendChild(makeBanner('warn', 'info', t('overview.warnSpa')));
   }
   if (state.config && state.config.safeMode) {
     list.appendChild(makeBanner('warn', 'shield', t('overview.warnSafe'), t('overview.turnOff'), function () {

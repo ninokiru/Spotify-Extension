@@ -3,6 +3,8 @@
 Ứng dụng Windows quản lý phần tuỳ biến của **Spotify Desktop**: đổi giao diện, bật/tắt tiện ích, chỉnh màu, sao lưu và khôi phục client. Phần chạy bên trong Spotify là một payload TypeScript; phần quản lý là app desktop **Rust + Tauri 2** (~5 MB, dùng WebView2 có sẵn của Windows).
 
 > Windows 10/11 64-bit · Spotify Desktop bản cài từ [spotify.com](https://www.spotify.com/download/windows/) · bản Microsoft Store chưa hỗ trợ.
+>
+> Hỗ trợ cả hai kiểu client: bản cũ có thư mục `Apps\xpui`, và bản mới đóng gói `Apps\xpui.spa` (Spotify 1.2.46+). Với bản đóng gói, lần áp dụng đầu tiên sẽ giải nén gói ra `Apps\xpui` và **giữ nguyên file `.spa` gốc**; khôi phục chỉ cần xoá thư mục đã giải nén.
 
 ![Tổng quan](docs/screenshots/overview.png)
 ![Giao diện sáng](docs/screenshots/overview-light.png)
@@ -48,14 +50,16 @@ Thao tác làm thay đổi client đều ghi ngay vào `Apps\xpui`; **khởi đ�
 
 ## Cách hoạt động
 
-1. **Sao lưu** — trước lần vá đầu tiên của mỗi phiên bản Spotify, app chép nguyên `Apps\xpui` vào
-   `%APPDATA%\spotify-extension\backups\<id>\<phiên-bản>\xpui\` kèm `manifest.json`.
+1. **Sao lưu** — trước lần vá đầu tiên của mỗi phiên bản Spotify, app chép nguyên client vào
+   `%APPDATA%\spotify-extension\backups\<id>\<phiên-bản>\` kèm `manifest.json`.
+   Client dạng thư mục thì chép `xpui\`; client dạng gói thì chép chính `xpui.spa`.
    Bản sao luôn sạch: bỏ thư mục `sxe` và khối marker, nên khôi phục ra đúng bản gốc.
-2. **Áp dụng** — ghi `runtime.js`, màu, `user.css`, các extension đang bật và `manifest.js` vào
+2. **Áp dụng** — nếu client còn ở dạng gói, giải nén `Apps\xpui.spa` ra `Apps\xpui` một lần.
+   Sau đó ghi `runtime.js`, màu, `user.css`, các extension đang bật và `manifest.js` vào
    `Apps\xpui\sxe\`; thư mục mới được dựng cạnh đó rồi đổi chỗ, nên lỗi giữa chừng không làm hỏng bản đang chạy.
-   Sau đó chèn một khối nhỏ vào `index.html` giữa hai mốc `<!-- sxe:start -->` và `<!-- sxe:end -->`.
-3. **Khôi phục** — chép lại snapshot của đúng phiên bản Spotify đang chạy, rồi xoá thư mục `sxe`.
-   Nhờ vậy client không còn ở trạng thái "vá dở".
+   Cuối cùng chèn một khối nhỏ vào `index.html` giữa hai mốc `<!-- sxe:start -->` và `<!-- sxe:end -->`.
+3. **Khôi phục** — client dạng thư mục thì chép lại snapshot của đúng phiên bản đang chạy rồi xoá `sxe\`;
+   client dạng gói thì xoá thư mục `Apps\xpui` để Spotify dùng lại `xpui.spa` gốc.
 4. **Trong Spotify** — payload đọc manifest, dựng bảng điều khiển bằng Shadow DOM và nạp các extension đã bật.
 
 ## Cấu hình

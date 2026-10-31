@@ -148,6 +148,7 @@ pub fn describe(candidate: &Candidate) -> Option<Install> {
         arch: read_arch(&root.join("Spotify.exe")),
         state: String::new(),
         patched_by: String::new(),
+        spa: false,
         has_backup: false,
         backup_at: String::new(),
     };
@@ -158,8 +159,11 @@ pub fn describe(candidate: &Candidate) -> Option<Install> {
     }
 
     if !util::is_dir(&xpui) {
+        // Spotify 1.2.46+ ships the client as a packed archive. The first
+        // apply extracts it into Apps/xpui, which Spotify prefers.
         if util::is_file(&apps.join("xpui.spa")) {
-            install.state = "unsupported".to_string();
+            install.spa = true;
+            install.state = "stock".to_string();
             install.patched_by = "none".to_string();
             return Some(install);
         }

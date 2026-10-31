@@ -188,6 +188,8 @@ fn extension_path(id: &str) -> Option<PathBuf> {
 /// Writes the payload into a staging folder and swaps it in, so a failed
 /// write never leaves Spotify with a half written payload.
 pub fn write_payload(install: &Install, config: &Config, version: &str) -> Result<(), String> {
+    ensure_client_folder(install)?;
+
     let xpui = Path::new(install.xpui_path.as_str());
     let target = xpui.join(paths::SXE_DIR);
     let staging = xpui.join(format!("{}.new", paths::SXE_DIR));
@@ -463,6 +465,64 @@ fn json_escape(text: &str) -> String {
         }
     }
     output
+}
+
+/// Extracts Apps/xpui.spa into Apps/xpui the first time a packed client is
+/// patched. The archive is left untouched, so restoring is a folder delete.
+fn ensure_client_folder(install: &Install) -> Result<(), String> {
+    let xpui = Path::new(install.xpui_path.as_str());
+    if util::is_dir(xpui) {
+        return Ok(());
+    }
+
+    let packed = Path::new(install.root.as_str())
+        .join("Apps")
+        .join("xpui.spa");
+    if !util::is_file(&packed) {
+        return Err(format!("Client folder is missing: {}", xpui.display()));
+    }
+    extract_zip(&packed, xpui)
+}
+
+fn extract_zip(archive_path: &Path, target: &Path) -> Result<(), String> {
+    let file = fs::File::open(archive_path)
+        .map_err(|error| format!("Could not open {}: {}", archive_path.display(), error))?;
+    let mut archive = zip::ZipArchive::new(file)
+        .map_err(|error| format!("Could not read {}: {}", archive_path.display(), error))?;
+
+    fs::create_dir_all(target)
+        .map_err(|error| format!("Could not create {}: {}", target.display(), error))?;
+
+    for index in 0..archive.len() {
+        let mut entry = archive
+            .by_index(index)
+            .map_err(|error| format!("Could not read an archive entry: {}", error))?;
+
+        let name = entry.name().replace('\\', "/");
+        let cleaned = name.trim_start_matches("./");
+        if cleaned.is_empty() || cleaned.contains("..") || cleaned.starts_with('/') {
+            continue;
+        }
+
+        let out = target.join(cleaned);
+        if entry.is_dir() {
+            fs::create_dir_all(&out)
+                .map_err(|error| format!("Could not create {}: {}", out.display(), error))?;
+            continue;
+        }
+
+        if let Some(parent) = out.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Could not create {}: {}", parent.display(), error))?;
+        }
+
+        let mut destination = fs::File::create(&out)
+            .map_err(|error| format!("Could not write {}: {}", out.display(), error))?;
+        std::io::copy(&mut entry, &mut destination)
+            .map_err(|error| format!("Could not extract {}: {}", out.display(), error))?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

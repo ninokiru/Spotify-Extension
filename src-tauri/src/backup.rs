@@ -22,6 +22,9 @@ pub struct Manifest {
     pub source: String,
     #[serde(default)]
     pub files: usize,
+    /// True when the snapshot keeps Apps/xpui.spa instead of a folder.
+    #[serde(default)]
+    pub spa: bool,
 }
 
 /// One stored copy of a client folder; the copy itself lives in `dir/xpui`.
@@ -168,7 +171,17 @@ fn ensure_at(root: &Path, install: &Install) -> Result<Manifest, String> {
     let staging = base.join(format!(".staging-{}", key));
     util::remove_dir(&staging);
 
-    let manifest = match stage_snapshot(&staging, install) {
+    let client = Path::new(install.xpui_path.as_str());
+    let packed = Path::new(install.root.as_str())
+        .join("Apps")
+        .join("xpui.spa");
+    let staged = if !util::is_dir(client) && util::is_file(&packed) {
+        stage_packed(&staging, install, &packed)
+    } else {
+        stage_snapshot(&staging, install)
+    };
+
+    let manifest = match staged {
         Ok(value) => value,
         Err(error) => {
             util::remove_dir(&staging);
@@ -205,6 +218,31 @@ fn stage_snapshot(staging: &Path, install: &Install) -> Result<Manifest, String>
         created_at: util::now_rfc3339(),
         source: install.xpui_path.clone(),
         files: count_files(&copy),
+        spa: false,
+    };
+
+    let text = manifest_text(&manifest);
+    util::write_atomic(&staging.join(paths::BACKUP_MANIFEST), text.as_bytes())?;
+    Ok(manifest)
+}
+
+/// Keeps the packed archive as the pristine snapshot of a client that has no
+/// extracted folder yet.
+fn stage_packed(staging: &Path, install: &Install, archive: &Path) -> Result<Manifest, String> {
+    fs::create_dir_all(staging)
+        .map_err(|error| format!("Could not create {}: {}", staging.display(), error))?;
+
+    let target = staging.join("xpui.spa");
+    fs::copy(archive, &target)
+        .map_err(|error| format!("Could not copy {}: {}", archive.display(), error))?;
+
+    let manifest = Manifest {
+        install_id: install.id.clone(),
+        version: install.version.clone(),
+        created_at: util::now_rfc3339(),
+        source: archive.to_string_lossy().into_owned(),
+        files: 1,
+        spa: true,
     };
 
     let text = manifest_text(&manifest);
@@ -230,6 +268,13 @@ fn restore_at(root: &Path, install: &Install) -> Result<bool, String> {
     candidates.extend(newest_first);
 
     for candidate in candidates {
+        // A packed snapshot means we extracted the folder ourselves, so
+        // restoring is deleting it and letting Spotify use the archive again.
+        if candidate.manifest.spa {
+            util::remove_dir(Path::new(install.xpui_path.as_str()));
+            return Ok(true);
+        }
+
         let source = candidate.dir.join(SNAPSHOT_FOLDER);
         if !util::is_dir(&source) {
             continue;
@@ -264,12 +309,13 @@ fn count_files(root: &Path) -> usize {
 /// can read each other's snapshots.
 fn manifest_text(manifest: &Manifest) -> String {
     format!(
-        "{{\n  \"installId\": \"{}\",\n  \"version\": \"{}\",\n  \"createdAt\": \"{}\",\n  \"source\": \"{}\",\n  \"files\": {}\n}}\n",
+        "{{\n  \"installId\": \"{}\",\n  \"version\": \"{}\",\n  \"createdAt\": \"{}\",\n  \"source\": \"{}\",\n  \"files\": {},\n  \"spa\": {}\n}}\n",
         escape_json(&manifest.install_id),
         escape_json(&manifest.version),
         escape_json(&manifest.created_at),
         escape_json(&manifest.source),
-        manifest.files
+        manifest.files,
+        manifest.spa
     )
 }
 
@@ -290,6 +336,7 @@ fn read_manifest_file(path: &Path) -> Option<Manifest> {
         created_at: json_string(&raw, "createdAt").unwrap_or_default(),
         source: json_string(&raw, "source").unwrap_or_default(),
         files: json_number(&raw, "files").unwrap_or(0),
+        spa: json_bool(&raw, "spa").unwrap_or(false),
     })
 }
 
@@ -308,6 +355,17 @@ fn value_after_key<'a>(text: &'a str, key: &str) -> Option<&'a str> {
     }
 
     None
+}
+
+fn json_bool(text: &str, key: &str) -> Option<bool> {
+    let value = value_after_key(text, key)?;
+    if value.starts_with("true") {
+        Some(true)
+    } else if value.starts_with("false") {
+        Some(false)
+    } else {
+        None
+    }
 }
 
 fn json_string(text: &str, key: &str) -> Option<String> {
@@ -447,6 +505,7 @@ mod tests {
             arch: "x64".into(),
             state: "patched".into(),
             patched_by: "test".into(),
+            spa: false,
             has_backup: false,
             backup_at: String::new(),
         }

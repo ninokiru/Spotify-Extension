@@ -26,6 +26,8 @@ pub struct Install {
     pub arch: String,
     pub state: String,
     pub patched_by: String,
+    /// True when the client ships as a packed Apps/xpui.spa archive.
+    pub spa: bool,
     pub has_backup: bool,
     pub backup_at: String,
 }
