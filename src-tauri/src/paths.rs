@@ -4,6 +4,9 @@ pub const SXE_DIR: &str = "sxe";
 pub const MARKER_START: &str = "<!-- sxe:start -->";
 pub const MARKER_END: &str = "<!-- sxe:end -->";
 pub const BACKUP_MANIFEST: &str = "manifest.json";
+/// Marker written into Apps/xpui after extracting a packed client. It records
+/// which Spotify version the folder came from.
+pub const SPA_MARKER: &str = ".sxe-spa";
 pub const REPO_URL: &str = "https://github.com/ninokiru/Spotify-Extension";
 
 fn env_path(name: &str) -> Option<PathBuf> {

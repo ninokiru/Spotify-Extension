@@ -171,11 +171,10 @@ fn ensure_at(root: &Path, install: &Install) -> Result<Manifest, String> {
     let staging = base.join(format!(".staging-{}", key));
     util::remove_dir(&staging);
 
-    let client = Path::new(install.xpui_path.as_str());
     let packed = Path::new(install.root.as_str())
         .join("Apps")
         .join("xpui.spa");
-    let staged = if !util::is_dir(client) && util::is_file(&packed) {
+    let staged = if crate::apply::packed_pending(install) {
         stage_packed(&staging, install, &packed)
     } else {
         stage_snapshot(&staging, install)
@@ -211,6 +210,7 @@ fn stage_snapshot(staging: &Path, install: &Install) -> Result<Manifest, String>
         paths::SXE_DIR,
     )?;
     strip_marker_file(&copy.join("index.html"))?;
+    let _ = fs::remove_file(copy.join(paths::SPA_MARKER));
 
     let manifest = Manifest {
         install_id: install.id.clone(),

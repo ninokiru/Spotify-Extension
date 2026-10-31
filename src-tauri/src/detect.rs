@@ -158,10 +158,25 @@ pub fn describe(candidate: &Candidate) -> Option<Install> {
         install.backup_at = created_at;
     }
 
-    if !util::is_dir(&xpui) {
-        // Spotify 1.2.46+ ships the client as a packed archive. The first
-        // apply extracts it into Apps/xpui, which Spotify prefers.
-        if util::is_file(&apps.join("xpui.spa")) {
+    let packed = apps.join("xpui.spa");
+    let has_packed = util::is_file(&packed);
+
+    // A folder only counts when it was extracted from the running version.
+    // After a Spotify update the archive is newer than the leftover folder,
+    // so the folder has to be rebuilt instead of patched.
+    let fresh = if !util::is_dir(&xpui) {
+        false
+    } else if has_packed {
+        let expected = util::packed_fingerprint(&install.version, &packed);
+        matches!(util::read_marker(&xpui), Some(value) if value == expected)
+    } else {
+        true
+    };
+
+    if !fresh {
+        // Spotify 1.2.46+ ships the client as a packed archive. Applying
+        // extracts it into Apps/xpui, which Spotify prefers.
+        if has_packed {
             install.spa = true;
             install.state = "stock".to_string();
             install.patched_by = "none".to_string();

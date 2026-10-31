@@ -14,6 +14,27 @@ pub fn read_optional(path: &Path) -> Option<String> {
     fs::read_to_string(path).ok()
 }
 
+/// Reads the marker that records which Spotify version a client folder was
+/// extracted from, or None when the folder was not created by this app.
+pub fn read_marker(folder: &Path) -> Option<String> {
+    let raw = fs::read_to_string(folder.join(crate::paths::SPA_MARKER)).ok()?;
+    Some(raw.trim().to_string())
+}
+
+/// Fingerprint of a packed client: the Spotify version plus the archive size
+/// and modification time, so a replaced archive is noticed even before
+/// Spotify reports its new version.
+pub fn packed_fingerprint(version: &str, archive: &Path) -> String {
+    let meta = fs::metadata(archive).ok();
+    let size = meta.as_ref().map(|value| value.len()).unwrap_or(0);
+    let modified = meta
+        .and_then(|value| value.modified().ok())
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0);
+    format!("{}|{}:{}", version, size, modified)
+}
+
 fn io_error(error: io::Error) -> String {
     error.to_string()
 }

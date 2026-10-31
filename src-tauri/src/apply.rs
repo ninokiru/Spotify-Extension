@@ -467,21 +467,45 @@ fn json_escape(text: &str) -> String {
     output
 }
 
-/// Extracts Apps/xpui.spa into Apps/xpui the first time a packed client is
-/// patched. The archive is left untouched, so restoring is a folder delete.
-fn ensure_client_folder(install: &Install) -> Result<(), String> {
-    let xpui = Path::new(install.xpui_path.as_str());
-    if util::is_dir(xpui) {
-        return Ok(());
-    }
-
+/// True when Apps/xpui is missing or was extracted from another Spotify
+/// build, so it has to be rebuilt from the packed archive.
+pub fn packed_pending(install: &Install) -> bool {
     let packed = Path::new(install.root.as_str())
         .join("Apps")
         .join("xpui.spa");
     if !util::is_file(&packed) {
-        return Err(format!("Client folder is missing: {}", xpui.display()));
+        return false;
     }
-    extract_zip(&packed, xpui)
+    let expected = util::packed_fingerprint(&install.version, &packed);
+    match util::read_marker(Path::new(install.xpui_path.as_str())) {
+        Some(value) => value != expected,
+        None => true,
+    }
+}
+
+/// Extracts Apps/xpui.spa into Apps/xpui, replacing a folder left behind by an
+/// older Spotify version. The archive itself is never modified.
+fn ensure_client_folder(install: &Install) -> Result<(), String> {
+    let xpui = Path::new(install.xpui_path.as_str());
+
+    if packed_pending(install) {
+        let packed = Path::new(install.root.as_str())
+            .join("Apps")
+            .join("xpui.spa");
+
+        if util::is_dir(xpui) {
+            util::remove_dir(xpui);
+        }
+        extract_zip(&packed, xpui)?;
+        let marker = util::packed_fingerprint(&install.version, &packed);
+        util::write_atomic(&xpui.join(paths::SPA_MARKER), marker.as_bytes())?;
+        return Ok(());
+    }
+
+    if util::is_dir(xpui) {
+        return Ok(());
+    }
+    Err(format!("Client folder is missing: {}", xpui.display()))
 }
 
 fn extract_zip(archive_path: &Path, target: &Path) -> Result<(), String> {

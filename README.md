@@ -4,7 +4,7 @@
 
 > Windows 10/11 64-bit · Spotify Desktop bản cài từ [spotify.com](https://www.spotify.com/download/windows/) · bản Microsoft Store chưa hỗ trợ.
 >
-> Hỗ trợ cả hai kiểu client: bản cũ có thư mục `Apps\xpui`, và bản mới đóng gói `Apps\xpui.spa` (Spotify 1.2.46+). Với bản đóng gói, lần áp dụng đầu tiên sẽ giải nén gói ra `Apps\xpui` và **giữ nguyên file `.spa` gốc**; khôi phục chỉ cần xoá thư mục đã giải nén.
+> Hỗ trợ cả hai kiểu client: bản cũ có thư mục `Apps\xpui`, và bản mới đóng gói `Apps\xpui.spa` (Spotify 1.2.46+). Với bản đóng gói, **mỗi lần Spotify cập nhật**, app tự giải nén gói mới ra `Apps\xpui` rồi vá lại và giữ nguyên file `.spa` gốc; khôi phục chỉ cần xoá thư mục đã giải nén.
 
 ![Tổng quan](docs/screenshots/overview.png)
 ![Giao diện sáng](docs/screenshots/overview-light.png)
@@ -54,7 +54,8 @@ Thao tác làm thay đổi client đều ghi ngay vào `Apps\xpui`; **khởi đ�
    `%APPDATA%\spotify-extension\backups\<id>\<phiên-bản>\` kèm `manifest.json`.
    Client dạng thư mục thì chép `xpui\`; client dạng gói thì chép chính `xpui.spa`.
    Bản sao luôn sạch: bỏ thư mục `sxe` và khối marker, nên khôi phục ra đúng bản gốc.
-2. **Áp dụng** — nếu client còn ở dạng gói, giải nén `Apps\xpui.spa` ra `Apps\xpui` một lần.
+2. **Áp dụng** — nếu client còn ở dạng gói, giải nén `Apps\xpui.spa` ra `Apps\xpui`.
+   Thư mục giải nén có một file đánh dấu phiên bản, nên khi Spotify cập nhật, app biết bản cũ đã lỗi thời và **giải nén lại gói mới** thay vì vá nhầm bản cũ.
    Sau đó ghi `runtime.js`, màu, `user.css`, các extension đang bật và `manifest.js` vào
    `Apps\xpui\sxe\`; thư mục mới được dựng cạnh đó rồi đổi chỗ, nên lỗi giữa chừng không làm hỏng bản đang chạy.
    Cuối cùng chèn một khối nhỏ vào `index.html` giữa hai mốc `<!-- sxe:start -->` và `<!-- sxe:end -->`.
