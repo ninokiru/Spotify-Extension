@@ -1344,7 +1344,7 @@ async function toggleCssSnippet(file) {
 
 async function deleteCssFile(id) {
   try {
-    assertReport(await call('delete_css_file', { id: id }));
+    assertReport(await call('delete_css_file', { id: id, confirm: true }));
     toastOk('css.deleted');
     state.cssConfirmDelete = '';
     if (state.cssActive === id) state.cssActive = 'user';
@@ -2198,7 +2198,7 @@ async function removeModule(module) {
   state.confirmRemoveId = '';
   renderModuleGroups();
   try {
-    const report = await call('remove_module', { id: module.id });
+    const report = await call('remove_module', { id: module.id, confirm: true });
     assertReport(report);
     module.installed = false;
     module.enabled = false;
