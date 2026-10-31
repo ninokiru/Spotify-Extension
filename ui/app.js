@@ -30,6 +30,8 @@ const DICT = {
     'css.hint': 'Áp dụng lại để Spotify nhận CSS mới.',
     'css.emptyHint': 'Chưa có snippet nào. Tạo một file để thêm CSS riêng.',
     'css.chars': '{count} ký tự',
+    'css.preview': 'Xem trước',
+    'css.previewHint': 'Cập nhật khi bạn gõ',
     'css.loadError': 'Không đọc được danh sách CSS.',
     'css.nameTaken': 'Tên này đã có.',
     'css.badName': 'Tên chỉ dùng chữ, số, dấu gạch ngang và gạch dưới.',
@@ -147,6 +149,11 @@ const DICT = {
     'modules.loadError': 'Không tải được danh sách module.',
     'appearance.title': 'Giao diện',
     'appearance.themes': 'Theme',
+    'appearance.import': 'Nhập theme Spicetify',
+    'appearance.importPlaceholder': 'Dán đường dẫn thư mục theme',
+    'appearance.importAction': 'Nhập',
+    'appearance.importHint': 'Chọn thư mục có color.ini hoặc user.css của theme Spicetify.',
+    'appearance.imported': 'Đã nhập theme {name}',
     'appearance.colors': 'Màu',
     'appearance.color.accent': 'Màu nhấn',
     'appearance.color.background': 'Nền',
@@ -257,6 +264,8 @@ const DICT = {
     'css.hint': 'Apply again so Spotify picks up the new CSS.',
     'css.emptyHint': 'No snippets yet. Create a file to add your own CSS.',
     'css.chars': '{count} characters',
+    'css.preview': 'Preview',
+    'css.previewHint': 'Updates as you type',
     'css.loadError': 'Could not read the CSS files.',
     'css.nameTaken': 'That name is already used.',
     'css.badName': 'Use letters, digits, dashes and underscores only.',
@@ -374,6 +383,11 @@ const DICT = {
     'modules.loadError': 'Could not load modules.',
     'appearance.title': 'Appearance',
     'appearance.themes': 'Themes',
+    'appearance.import': 'Import Spicetify theme',
+    'appearance.importPlaceholder': 'Paste the theme folder path',
+    'appearance.importAction': 'Import',
+    'appearance.importHint': 'Pick a folder containing a Spicetify color.ini or user.css.',
+    'appearance.imported': 'Imported theme {name}',
     'appearance.colors': 'Colors',
     'appearance.color.accent': 'Accent',
     'appearance.color.background': 'Background',
@@ -542,11 +556,77 @@ const state = {
   cssNewName: '',
   cssConfirmDelete: '',
   uiTheme: 'dark',
-  uiAccent: 'green'
+  uiAccent: 'green',
+  spicetifyPath: '',
+  importBusy: false
 };
 
 const NS = 'http://www.w3.org/2000/svg';
 let searchTimer = 0;
+let previewTimer = 0;
+
+/* A tiny Spotify-like surface so the CSS being edited can be seen live. */
+const PREVIEW_BASE = [
+  '*{box-sizing:border-box}',
+  'html,body{margin:0;height:100%;font-family:"Segoe UI",system-ui,sans-serif;color:#fff;background:#000}',
+  '.Root{display:grid;grid-template-columns:190px 1fr;grid-template-rows:1fr 72px;gap:8px;height:100%;padding:8px}',
+  '.Root__nav-bar{background:#121212;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}',
+  '.nav-item{display:flex;align-items:center;gap:8px;color:#b3b3b3;font-size:12px}',
+  '.nav-dot{width:24px;height:24px;border-radius:4px;background:#282828}',
+  '.Root__main-view{background:linear-gradient(180deg,#1f1f1f,#121212 40%);border-radius:8px;padding:16px;overflow:hidden}',
+  '.main-title{font-size:18px;font-weight:700;margin:0 0 12px}',
+  '.card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}',
+  '.card{background:#181818;border-radius:6px;padding:10px}',
+  '.card:hover{background:#282828}',
+  '.card-cover{aspect-ratio:1;border-radius:4px;background:linear-gradient(135deg,#1ed760,#0f6b32);margin-bottom:8px}',
+  '.card-title{font-size:12px;font-weight:600;margin:0}',
+  '.card-sub{font-size:11px;color:#b3b3b3;margin:2px 0 0}',
+  '.Root__now-playing-bar{grid-column:1/3;display:grid;grid-template-columns:1fr 2fr 1fr;align-items:center;gap:12px;background:#181818;border-radius:8px;padding:8px 14px}',
+  '.now-playing{display:flex;align-items:center;gap:10px;min-width:0}',
+  '.now-cover{width:40px;height:40px;border-radius:4px;background:linear-gradient(135deg,#a78bfa,#4c1d95)}',
+  '.now-title{font-size:12px;font-weight:600;margin:0}',
+  '.now-artist{font-size:11px;color:#b3b3b3;margin:2px 0 0}',
+  '.player-controls{display:flex;align-items:center;justify-content:center;gap:14px}',
+  '.round{width:28px;height:28px;border-radius:50%;background:#fff;display:grid;place-items:center}',
+  '.tri{width:0;height:0;border-left:8px solid #04140a;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}',
+  '.bar{width:9px;height:9px;border-radius:2px;background:#fff}',
+  '.playback-bar{display:flex;align-items:center;gap:8px;font-size:10px;color:#b3b3b3}',
+  '.progress{flex:1;height:4px;border-radius:2px;background:#4d4d4d;position:relative}',
+  '.progress span{position:absolute;inset:0 auto 0 0;width:42%;background:#fff;border-radius:2px}'
+].join('');
+
+const PREVIEW_HTML = [
+  '<div class="Root">',
+  '<div class="Root__nav-bar">',
+  '<div class="nav-item"><span class="nav-dot"></span>Trang chủ</div>',
+  '<div class="nav-item"><span class="nav-dot"></span>Tìm kiếm</div>',
+  '<div class="nav-item"><span class="nav-dot"></span>Thư viện</div>',
+  '</div>',
+  '<div class="Root__main-view">',
+  '<h2 class="main-title">Nghe gần đây</h2>',
+  '<div class="card-grid">',
+  '<div class="card"><div class="card-cover"></div><p class="card-title">Danh sách 1</p><p class="card-sub">Playlist</p></div>',
+  '<div class="card"><div class="card-cover"></div><p class="card-title">Danh sách 2</p><p class="card-sub">Album</p></div>',
+  '<div class="card"><div class="card-cover"></div><p class="card-title">Danh sách 3</p><p class="card-sub">Nghệ sĩ</p></div>',
+  '<div class="card"><div class="card-cover"></div><p class="card-title">Danh sách 4</p><p class="card-sub">Playlist</p></div>',
+  '</div></div>',
+  '<div class="Root__now-playing-bar">',
+  '<div class="now-playing"><div class="now-cover"></div><div><p class="now-title">Tên bài hát</p><p class="now-artist">Nghệ sĩ</p></div></div>',
+  '<div class="player-controls"><span class="bar"></span><span class="round"><span class="tri"></span></span><span class="bar"></span></div>',
+  '<div class="playback-bar"><span>1:12</span><div class="progress"><span></span></div><span>3:45</span></div>',
+  '</div></div>'
+].join('');
+
+function previewDocument(css) {
+  return '<!doctype html><html><head><meta charset="utf-8"><style>' +
+    PREVIEW_BASE + '</style><style>' + css + '</style></head><body>' +
+    PREVIEW_HTML + '</body></html>';
+}
+
+function refreshPreview() {
+  const frame = document.querySelector('.css-preview-frame');
+  if (frame) frame.srcdoc = previewDocument(state.cssDraft);
+}
 let colorTimer = 0;
 
 /* ---------- Small DOM helpers ---------- */
@@ -1064,6 +1144,8 @@ async function demoCall(name, args) {
     case 'set_snippet_enabled':
       if (DEMO_CSS.snippets[args.id]) DEMO_CSS.snippets[args.id].enabled = args.enabled;
       return demoOk('');
+    case 'import_spicetify_theme':
+      return demoOk('spicetify-theme');
     default:
       throw reportError({ code: 'error' });
   }
@@ -2168,7 +2250,55 @@ function renderAppearancePage(page) {
     fillThemeGrid(grid);
   }
 
+  page.appendChild(importCard());
   page.appendChild(colorCard());
+}
+
+function importCard() {
+  const card = el('section', 'card import-card');
+  const head = el('div', 'card-head');
+  head.appendChild(el('h2', 'card-title', t('appearance.import')));
+  card.appendChild(head);
+
+  const row = el('div', 'import-row');
+  const input = el('input', 'input');
+  input.type = 'text';
+  input.placeholder = t('appearance.importPlaceholder');
+  input.value = state.spicetifyPath || '';
+  input.setAttribute('aria-label', t('appearance.importPlaceholder'));
+  input.setAttribute('autocomplete', 'off');
+  input.spellcheck = false;
+  input.addEventListener('input', function () { state.spicetifyPath = input.value; });
+  row.appendChild(input);
+  row.appendChild(makeButton(t('appearance.importAction'), 'secondary', {
+    disabled: state.importBusy,
+    onClick: function () { importSpicetifyTheme(input.value); }
+  }));
+  card.appendChild(row);
+  card.appendChild(el('p', 'card-note', t('appearance.importHint')));
+  return card;
+}
+
+async function importSpicetifyTheme(path) {
+  const value = String(path || '').trim();
+  if (!value || state.importBusy) return;
+  state.importBusy = true;
+  renderPage();
+  try {
+    const report = await call('import_spicetify_theme', { path: value });
+    assertReport(report);
+    const name = report.message || '';
+    state.themesLoaded = false;
+    await loadThemes();
+    const data = await call('get_overview', {});
+    state.config = normalizeConfig(data && data.config);
+    toastOk('appearance.imported', { name: name });
+  } catch (error) {
+    toastError(error);
+  } finally {
+    state.importBusy = false;
+    renderPage();
+  }
 }
 
 function fillThemeGrid(grid) {
@@ -2524,6 +2654,8 @@ function renderCssPage(host) {
     dot.hidden = false;
     save.disabled = false;
     counter.textContent = t('css.chars', { count: area.value.length });
+    window.clearTimeout(previewTimer);
+    previewTimer = window.setTimeout(refreshPreview, 250);
   });
   area.addEventListener('keydown', function (event) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
@@ -2539,6 +2671,20 @@ function renderCssPage(host) {
   editor.appendChild(foot);
 
   layout.appendChild(editor);
+
+  const preview = el('section', 'css-preview');
+  const previewHead = el('div', 'css-preview-head');
+  previewHead.appendChild(el('h2', 'card-title', t('css.preview')));
+  previewHead.appendChild(el('span', 'css-count', t('css.previewHint')));
+  preview.appendChild(previewHead);
+
+  const frame = el('iframe', 'css-preview-frame');
+  frame.setAttribute('sandbox', '');
+  frame.setAttribute('title', t('css.preview'));
+  frame.srcdoc = previewDocument(state.cssDraft);
+  preview.appendChild(frame);
+  layout.appendChild(preview);
+
   host.appendChild(layout);
 }
 

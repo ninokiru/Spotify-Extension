@@ -363,3 +363,15 @@ pub fn set_snippet_enabled(id: String, enabled: bool) -> Report {
     }
     save_report(crate::config::save(&config))
 }
+
+#[tauri::command(async)]
+pub fn import_spicetify_theme(path: String) -> Report {
+    let mut config = config::load();
+    match themes::import_spicetify(&path, &mut config) {
+        Ok(id) => match crate::config::save(&config) {
+            Ok(()) => Report::ok(id),
+            Err(error) => Report::error(error),
+        },
+        Err(error) => Report::error(error),
+    }
+}

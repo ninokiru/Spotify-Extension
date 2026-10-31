@@ -674,3 +674,11 @@
 .css-foot-hint { font-size: var(--fs-11); color: var(--text-faint); }
 .css-count { font-size: var(--fs-11); color: var(--text-faint); }
 @media (max-width: 900px) { .css-layout { grid-template-columns: 1fr; } }
+
+.css-preview { grid-column: 1 / -1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.css-preview-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--line); }
+.css-preview-frame { display: block; width: 100%; height: 320px; border: 0; background: #000; }
+.import-card { margin-top: var(--sp-3); }
+.import-row { display: flex; gap: var(--sp-2); margin-top: var(--sp-2); }
+.import-row .input { flex: 1; min-width: 0; }
+.card-note { margin: var(--sp-2) 0 0; font-size: var(--fs-11); color: var(--text-faint); }

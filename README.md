@@ -17,7 +17,8 @@
 | Theme | 9 theme dựng sẵn + tự thả theme vào thư mục dữ liệu |
 | Tiện ích | 11 extension: adblock, auto skip explicit, quick keys, track copy, volume memory/wheel, playback speed, like hotkey, hide sidebar, focus mode, skip short tracks |
 | Màu | 6 màu giao diện (nhấn, nền, sidebar, card, chữ, chữ mờ) + CSS tuỳ ý |
-| CSS riêng | Soạn `user.css` và các snippet ngay trong app, bật/tắt từng file, lưu bằng `Ctrl+S`, có đếm ký tự |
+| CSS riêng | Soạn `user.css` và các snippet ngay trong app, **xem trước ngay khi gõ**, bật/tắt từng file, lưu bằng `Ctrl+S` |
+| Theme Spicetify | Nhập thư mục theme Spicetify (`color.ini` + `user.css`); app tự chuyển bảng màu sang 6 màu của mình |
 | An toàn | Sao lưu theo **từng phiên bản Spotify**, payload ghi qua thư mục tạm rồi đổi chỗ, `Khôi phục` trả client về nguyên bản |
 | Song ngữ | Việt / Anh, đổi ngay trong app |
 
@@ -44,8 +45,8 @@ snippets\               ← đoạn CSS
 | --- | --- |
 | **Tổng quan** | Chọn bản Spotify, xem phiên bản/kiến trúc/trạng thái vá/thông tin sao lưu, và chạy Apply · Khôi phục · Sao lưu · Khởi động lại · Mở thư mục |
 | **Module** | Bật/tắt tiện ích, chọn theme, bật snippet; tìm kiếm theo tên |
-| **Giao diện** | Chọn theme cho Spotify và chỉnh 6 màu, có ô xem trước |
-| **CSS** | Soạn `user.css` và các snippet tự tạo; bật/tắt, xoá, tạo file mới, lưu bằng `Ctrl+S` |
+| **Giao diện** | Chọn theme cho Spotify, chỉnh 6 màu, và nhập theme Spicetify từ thư mục có `color.ini` |
+| **CSS** | Soạn `user.css` và các snippet tự tạo, xem trước trực tiếp trong khung Spotify mô phỏng, lưu bằng `Ctrl+S` |
 | **Công cụ** | Ngôn ngữ, Safe mode, kiểm tra cập nhật, đường dẫn Spotify, bảng chẩn đoán |
 
 ![CSS](docs/screenshots/css.png)
