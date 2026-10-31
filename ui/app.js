@@ -195,6 +195,15 @@ const DICT = {
     'tools.colValue': 'Giá trị',
     'tools.colStatus': 'Trạng thái',
     'tools.data': 'Dữ liệu',
+    'tools.backups': 'Bản sao lưu',
+    'tools.backupsEmpty': 'Chưa có bản sao lưu nào.',
+    'tools.backupCurrent': 'Hiện tại',
+    'tools.backupPacked': 'gói xpui.spa',
+    'tools.backupFiles': '{count} file',
+    'tools.backupDeleted': 'Đã xoá bản sao lưu',
+    'tools.log': 'Nhật ký',
+    'tools.logClear': 'Xoá nhật ký',
+    'tools.logEmpty': 'Chưa có thao tác nào.',
     'tools.openData': 'Mở thư mục',
     'tools.appAppearance': 'Giao diện ứng dụng',
     'tools.mode': 'Chế độ',
@@ -433,6 +442,15 @@ const DICT = {
     'tools.colValue': 'Value',
     'tools.colStatus': 'Status',
     'tools.data': 'Data',
+    'tools.backups': 'Backups',
+    'tools.backupsEmpty': 'No backups yet.',
+    'tools.backupCurrent': 'Current',
+    'tools.backupPacked': 'xpui.spa archive',
+    'tools.backupFiles': '{count} files',
+    'tools.backupDeleted': 'Backup deleted',
+    'tools.log': 'Activity log',
+    'tools.logClear': 'Clear log',
+    'tools.logEmpty': 'No actions yet.',
     'tools.openData': 'Open folder',
     'tools.appAppearance': 'App appearance',
     'tools.mode': 'Mode',
@@ -567,7 +585,10 @@ const state = {
   uiAccent: 'green',
   spicetifyPath: '',
   importBusy: false,
-  pendingRunAction: ''
+  pendingRunAction: '',
+  backups: [],
+  backupsLoading: false,
+  log: loadLog()
 };
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -1155,6 +1176,12 @@ async function demoCall(name, args) {
       return demoOk('');
     case 'import_spicetify_theme':
       return demoOk('spicetify-theme');
+    case 'list_backups':
+      return [{ version: '1.2.52.1001', createdAt: '2026-10-30T14:22:00Z', files: 12, spa: true, current: true }];
+    case 'delete_backup':
+      return demoOk('');
+    case 'restore_backup':
+      return demoOk('');
     default:
       throw reportError({ code: 'error' });
   }
@@ -1164,10 +1191,16 @@ async function demoCall(name, args) {
 
 async function call(name, args) {
   const api = window.__TAURI__;
-  if (api && api.core && typeof api.core.invoke === 'function') {
-    return api.core.invoke(name, args || {});
+  try {
+    const result = api && api.core && typeof api.core.invoke === 'function'
+      ? await api.core.invoke(name, args || {})
+      : await demoCall(name, args || {});
+    recordAction(name, true, result);
+    return result;
+  } catch (error) {
+    recordAction(name, false, error);
+    throw error;
   }
-  return demoCall(name, args || {});
 }
 
 function normalizeConfig(raw) {
@@ -1407,6 +1440,7 @@ async function ensureRouteData() {
   if (state.route === 'appearance' && !state.themesLoaded) await loadThemes();
   if (state.route === 'css' && !state.cssLoaded) await loadCssFiles();
   if (state.route === 'tools' && !state.doctorLoaded) await loadDoctor();
+  if (state.route === 'tools') await loadBackups();
   renderShell();
   renderTopbar();
   renderPage();
@@ -3010,8 +3044,10 @@ function renderToolsPage(page) {
   stack.appendChild(updatesCard());
   stack.appendChild(spotifyCard());
   stack.appendChild(diagnosticsCard());
+  stack.appendChild(backupsCard());
   stack.appendChild(dataCard());
   stack.appendChild(appAppearanceCard());
+  stack.appendChild(logCard());
   page.appendChild(stack);
 }
 
@@ -3092,6 +3128,145 @@ async function copyReport() {
   else toastError(reportError({ code: 'error' }));
   renderPage();
 }
+
+/* ---------- Backups and activity log ---------- */
+
+const LOG_KEY = 'sxe:log';
+
+function loadLog() {
+  try {
+    const raw = window.localStorage.getItem(LOG_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) return [];
+    return list.filter(function (entry) {
+      return entry && typeof entry.name === 'string' && typeof entry.t === 'number';
+    }).slice(0, 40);
+  } catch (error) {
+    return [];
+  }
+}
+
+function persistLog() {
+  try {
+    window.localStorage.setItem(LOG_KEY, JSON.stringify(state.log));
+  } catch (error) {
+    /* storage can be blocked; the session keeps the log in memory */
+  }
+}
+
+const LOG_IGNORED = {
+  get_overview: 1, list_modules: 1, list_themes: 1, list_css_files: 1, read_css_file: 1,
+  list_backups: 1, doctor: 1, save_config: 1
+};
+
+function recordAction(name, ok, payload) {
+  if (LOG_IGNORED[name]) return;
+  const code = payload && typeof payload.code === 'string' ? payload.code : (ok ? 'ok' : 'error');
+  const success = ok && (!payload || payload.ok !== false);
+  state.log.unshift({ t: Date.now(), name: name, ok: success, code: code });
+  if (state.log.length > 40) state.log.length = 40;
+  persistLog();
+}
+
+function formatClock(value) {
+  const date = new Date(value);
+  const pad = function (n) { return String(n).padStart(2, '0'); };
+  return pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds());
+}
+
+async function loadBackups() {
+  if (!state.installId) {
+    state.backups = [];
+    return;
+  }
+  state.backupsLoading = true;
+  renderPage();
+  try {
+    const rows = await call('list_backups', { installId: state.installId });
+    state.backups = Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    state.backups = [];
+  } finally {
+    state.backupsLoading = false;
+    renderPage();
+  }
+}
+
+async function deleteBackup(version) {
+  try {
+    assertReport(await call('delete_backup', { installId: state.installId, version: version }));
+    toastOk('tools.backupDeleted');
+    await loadBackups();
+  } catch (error) {
+    toastError(error);
+  }
+}
+
+function backupsCard() {
+  const card = el('section', 'card');
+  const head = el('div', 'card-head');
+  head.appendChild(el('h2', 'card-title', t('tools.backups')));
+  card.appendChild(head);
+
+  if (state.backupsLoading) {
+    card.appendChild(el('p', 'card-note', t('common.loading')));
+    return card;
+  }
+  if (!state.backups.length) {
+    card.appendChild(el('p', 'card-note', t('tools.backupsEmpty')));
+    return card;
+  }
+
+  const list = el('ul', 'backup-list');
+  state.backups.forEach(function (item) {
+    const row = el('li', 'backup-row');
+    const text = el('div', 'backup-text');
+    text.appendChild(el('span', 'backup-name', item.version || t('common.dash')));
+    const meta = [formatDate(item.createdAt)];
+    meta.push(item.spa ? t('tools.backupPacked') : t('tools.backupFiles', { count: item.files }));
+    text.appendChild(el('span', 'backup-meta', meta.join(' · ')));
+    row.appendChild(text);
+
+    if (item.current) {
+      row.appendChild(el('span', 'chip chip-patched', t('tools.backupCurrent')));
+    } else {
+      row.appendChild(makeButton(t('css.delete'), 'ghost', {
+        onClick: function () { deleteBackup(item.version); }
+      }));
+    }
+    list.appendChild(row);
+  });
+  card.appendChild(list);
+  return card;
+}
+
+function logCard() {
+  const card = el('section', 'card');
+  const head = el('div', 'card-head');
+  head.appendChild(el('h2', 'card-title', t('tools.log')));
+  head.appendChild(makeButton(t('tools.logClear'), 'ghost', {
+    disabled: !state.log.length,
+    onClick: function () { state.log = []; persistLog(); renderPage(); }
+  }));
+  card.appendChild(head);
+
+  if (!state.log.length) {
+    card.appendChild(el('p', 'card-note', t('tools.logEmpty')));
+    return card;
+  }
+
+  const list = el('ul', 'log-list');
+  state.log.forEach(function (entry) {
+    const row = el('li', 'log-row' + (entry.ok ? '' : ' is-error'));
+    row.appendChild(el('span', 'log-time', formatClock(entry.t)));
+    row.appendChild(el('span', 'log-name', entry.name));
+    row.appendChild(el('span', 'log-code', entry.code || ''));
+    list.appendChild(row);
+  });
+  card.appendChild(list);
+  return card;
+}
+
 
 boot();
 
