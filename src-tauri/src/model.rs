@@ -86,6 +86,24 @@ pub struct DiagnosticRow {
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CssFile {
+    pub id: String,
+    /// "user" for the main user.css, "snippet" for a file the user created.
+    pub kind: String,
+    pub size: usize,
+    pub enabled: bool,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CssContent {
+    pub ok: bool,
+    pub content: String,
+    pub message: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Overview {
     pub version: String,
     pub data_dir: String,

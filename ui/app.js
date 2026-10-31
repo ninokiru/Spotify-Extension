@@ -12,6 +12,27 @@ const DICT = {
     'nav.modules': 'Module',
     'nav.appearance': 'Giao diện',
     'nav.tools': 'Công cụ',
+    'nav.css': 'CSS',
+    'css.title': 'CSS của tôi',
+    'css.files': 'Tệp CSS',
+    'css.userFile': 'user.css',
+    'css.snippet': 'Snippet',
+    'css.new': 'Tạo snippet',
+    'css.newName': 'Tên file',
+    'css.create': 'Tạo',
+    'css.cancel': 'Huỷ',
+    'css.save': 'Lưu',
+    'css.reload': 'Đọc lại',
+    'css.delete': 'Xoá',
+    'css.confirmDelete': 'Xoá?',
+    'css.saved': 'Đã lưu CSS',
+    'css.deleted': 'Đã xoá file',
+    'css.hint': 'Áp dụng lại để Spotify nhận CSS mới.',
+    'css.emptyHint': 'Chưa có snippet nào. Tạo một file để thêm CSS riêng.',
+    'css.chars': '{count} ký tự',
+    'css.loadError': 'Không đọc được danh sách CSS.',
+    'css.nameTaken': 'Tên này đã có.',
+    'css.badName': 'Tên chỉ dùng chữ, số, dấu gạch ngang và gạch dưới.',
     'sidebar.themeToLight': 'Chuyển sang giao diện sáng',
     'sidebar.themeToDark': 'Chuyển sang giao diện tối',
     'preview.label': 'Chế độ xem trước — dữ liệu mẫu',
@@ -218,6 +239,27 @@ const DICT = {
     'nav.modules': 'Modules',
     'nav.appearance': 'Appearance',
     'nav.tools': 'Tools',
+    'nav.css': 'CSS',
+    'css.title': 'My CSS',
+    'css.files': 'CSS files',
+    'css.userFile': 'user.css',
+    'css.snippet': 'Snippet',
+    'css.new': 'New snippet',
+    'css.newName': 'File name',
+    'css.create': 'Create',
+    'css.cancel': 'Cancel',
+    'css.save': 'Save',
+    'css.reload': 'Reload',
+    'css.delete': 'Delete',
+    'css.confirmDelete': 'Delete?',
+    'css.saved': 'CSS saved',
+    'css.deleted': 'File deleted',
+    'css.hint': 'Apply again so Spotify picks up the new CSS.',
+    'css.emptyHint': 'No snippets yet. Create a file to add your own CSS.',
+    'css.chars': '{count} characters',
+    'css.loadError': 'Could not read the CSS files.',
+    'css.nameTaken': 'That name is already used.',
+    'css.badName': 'Use letters, digits, dashes and underscores only.',
     'sidebar.themeToLight': 'Switch to light appearance',
     'sidebar.themeToDark': 'Switch to dark appearance',
     'preview.label': 'Preview mode — sample data',
@@ -419,7 +461,7 @@ const DICT = {
   }
 };
 
-const ROUTES = ['overview', 'modules', 'appearance', 'tools'];
+const ROUTES = ['overview', 'modules', 'appearance', 'css', 'tools'];
 const THEME_KEY = 'sxe:ui-theme';
 const ACCENT_KEY = 'sxe:ui-accent';
 const UI_THEMES = ['light', 'dark', 'system'];
@@ -488,6 +530,17 @@ const state = {
   doctorLoaded: false,
   configBusy: '',
   pathBusy: false,
+  cssFiles: [],
+  cssActive: 'user',
+  cssDraft: '',
+  cssLoaded: false,
+  cssLoading: false,
+  cssError: false,
+  cssDirty: false,
+  cssBusy: '',
+  cssNewOpen: false,
+  cssNewName: '',
+  cssConfirmDelete: '',
   uiTheme: 'dark',
   uiAccent: 'green'
 };
@@ -874,6 +927,15 @@ function demoDelay() {
   return new Promise(function (resolve) { window.setTimeout(resolve, 90); });
 }
 
+/* Preview-mode CSS store; only used when window.__TAURI__ is missing. */
+const DEMO_CSS = {
+  user: '/* CSS riêng của bạn — được nối sau theme và các snippet */\n:root {\n  --your-tweak: 1;\n}\n',
+  snippets: {
+    'my-tweaks': { content: '.Root__nav-bar { background: #101010; }\n', enabled: true },
+    'rounded-covers': { content: 'img { border-radius: 8px; }\n', enabled: false }
+  }
+};
+
 async function demoCall(name, args) {
   await demoDelay();
   switch (name) {
@@ -975,6 +1037,33 @@ async function demoCall(name, args) {
       return demoOk('');
     case 'doctor':
       return demoDoctor(args.installId);
+    case 'list_css_files':
+      return [{ id: 'user', kind: 'user', size: DEMO_CSS.user.length, enabled: true }].concat(
+        Object.keys(DEMO_CSS.snippets).map(function (id) {
+          const item = DEMO_CSS.snippets[id];
+          return { id: id, kind: 'snippet', size: item.content.length, enabled: item.enabled };
+        })
+      );
+    case 'read_css_file':
+      return {
+        ok: true,
+        content: args.id === 'user'
+          ? DEMO_CSS.user
+          : (DEMO_CSS.snippets[args.id] ? DEMO_CSS.snippets[args.id].content : ''),
+        message: ''
+      };
+    case 'save_css_file':
+      if (args.id === 'user') DEMO_CSS.user = args.content;
+      else if (DEMO_CSS.snippets[args.id]) DEMO_CSS.snippets[args.id].content = args.content;
+      else DEMO_CSS.snippets[args.id] = { content: args.content, enabled: false };
+      return demoOk('');
+    case 'delete_css_file':
+      if (!DEMO_CSS.snippets[args.id]) return demoFail('not-found', 'Missing file.');
+      delete DEMO_CSS.snippets[args.id];
+      return demoOk('');
+    case 'set_snippet_enabled':
+      if (DEMO_CSS.snippets[args.id]) DEMO_CSS.snippets[args.id].enabled = args.enabled;
+      return demoOk('');
     default:
       throw reportError({ code: 'error' });
   }
@@ -1103,6 +1192,99 @@ async function loadThemes() {
   }
 }
 
+async function loadCssFiles() {
+  state.cssLoading = true;
+  state.cssError = false;
+  renderPage();
+  try {
+    const rows = await call('list_css_files', {});
+    state.cssFiles = Array.isArray(rows) ? rows : [];
+    state.cssLoaded = true;
+    const known = state.cssFiles.some(function (file) { return file.id === state.cssActive; });
+    if (!known) state.cssActive = state.cssFiles.length ? state.cssFiles[0].id : 'user';
+  } catch (error) {
+    state.cssError = true;
+  } finally {
+    state.cssLoading = false;
+  }
+  await loadCssFile(state.cssActive);
+}
+
+async function loadCssFile(id) {
+  state.cssActive = id;
+  state.cssConfirmDelete = '';
+  try {
+    const data = await call('read_css_file', { id: id });
+    if (data && data.ok) {
+      state.cssDraft = String(data.content || '');
+      state.cssDirty = false;
+    }
+  } catch (error) {
+    toastError(error);
+  }
+  renderPage();
+}
+
+async function saveCssFile() {
+  if (state.cssBusy) return;
+  state.cssBusy = 'save';
+  renderPage();
+  try {
+    const report = await call('save_css_file', { id: state.cssActive, content: state.cssDraft });
+    assertReport(report);
+    state.cssDirty = false;
+    toastOk('css.saved');
+  } catch (error) {
+    toastError(error);
+  } finally {
+    state.cssBusy = '';
+    await loadCssFiles();
+  }
+}
+
+async function toggleCssSnippet(file) {
+  try {
+    assertReport(await call('set_snippet_enabled', { id: file.id, enabled: !file.enabled }));
+    await loadCssFiles();
+  } catch (error) {
+    toastError(error);
+  }
+}
+
+async function deleteCssFile(id) {
+  try {
+    assertReport(await call('delete_css_file', { id: id }));
+    toastOk('css.deleted');
+    state.cssConfirmDelete = '';
+    if (state.cssActive === id) state.cssActive = 'user';
+    await loadCssFiles();
+  } catch (error) {
+    toastError(error);
+  }
+}
+
+async function createCssSnippet(rawName) {
+  const name = String(rawName || '').trim().toLowerCase().replace(/\.css$/, '');
+  if (!name) return;
+  if (!/^[a-z0-9_-]+$/.test(name)) {
+    showToast(t('css.badName'), 'error');
+    return;
+  }
+  if (state.cssFiles.some(function (file) { return file.id === name; })) {
+    showToast(t('css.nameTaken'), 'error');
+    return;
+  }
+  try {
+    assertReport(await call('save_css_file', { id: name, content: '' }));
+    state.cssNewOpen = false;
+    state.cssNewName = '';
+    state.cssActive = name;
+    await loadCssFiles();
+  } catch (error) {
+    toastError(error);
+  }
+}
+
 async function loadDoctorInternal(quiet) {
   state.doctorLoading = true;
   try {
@@ -1132,6 +1314,7 @@ async function loadDoctor() {
 async function ensureRouteData() {
   if (state.route === 'modules' && !state.modulesLoaded) await loadModules();
   if (state.route === 'appearance' && !state.themesLoaded) await loadThemes();
+  if (state.route === 'css' && !state.cssLoaded) await loadCssFiles();
   if (state.route === 'tools' && !state.doctorLoaded) await loadDoctor();
   renderShell();
   renderTopbar();
@@ -1254,6 +1437,7 @@ function renderPage() {
   if (state.route === 'overview') renderOverviewPage(page);
   else if (state.route === 'modules') renderModulesPage(page);
   else if (state.route === 'appearance') renderAppearancePage(page);
+  else if (state.route === 'css') renderCssPage(page);
   else renderToolsPage(page);
 }
 
@@ -2205,6 +2389,157 @@ function resetColors() {
   });
   window.clearTimeout(colorTimer);
   queueColorSave(Object.assign({}, DEFAULT_COLORS), 'toast.colorsReset');
+}
+
+/* ---------- Custom CSS ---------- */
+
+function renderCssPage(host) {
+  if (state.cssLoading && !state.cssLoaded) {
+    host.appendChild(el('p', 'css-empty', t('common.loading')));
+    return;
+  }
+  if (state.cssError && !state.cssLoaded) {
+    const empty = el('div', 'empty');
+    empty.appendChild(icon('code', 'empty-icon'));
+    empty.appendChild(el('p', null, t('css.loadError')));
+    empty.appendChild(makeButton(t('common.retry'), 'secondary', { onClick: function () { loadCssFiles(); } }));
+    host.appendChild(empty);
+    return;
+  }
+
+  const layout = el('div', 'css-layout');
+  const files = el('aside', 'css-files');
+
+  const head = el('div', 'css-files-head');
+  head.appendChild(el('h2', 'card-title', t('css.files')));
+  head.appendChild(makeButton(t('css.new'), 'ghost', {
+    icon: 'code',
+    onClick: function () {
+      state.cssNewOpen = !state.cssNewOpen;
+      renderPage();
+    }
+  }));
+  files.appendChild(head);
+
+  const list = el('ul', 'css-list');
+  state.cssFiles.forEach(function (file) {
+    const row = el('li', 'css-row' + (file.id === state.cssActive ? ' is-active' : ''));
+
+    const pick = el('button', 'css-row-main');
+    pick.type = 'button';
+    pick.appendChild(icon(file.kind === 'user' ? 'code' : 'copy'));
+    const text = el('span', 'css-row-text');
+    text.appendChild(el('span', 'css-row-name', file.kind === 'user' ? t('css.userFile') : file.id + '.css'));
+    text.appendChild(el('span', 'css-row-meta', t('css.chars', { count: file.size })));
+    pick.appendChild(text);
+    pick.addEventListener('click', function () { loadCssFile(file.id); });
+    row.appendChild(pick);
+
+    if (file.kind === 'snippet') {
+      if (state.cssConfirmDelete === file.id) {
+        row.appendChild(makeButton(t('css.confirmDelete'), 'danger', {
+          onClick: function () { deleteCssFile(file.id); }
+        }));
+      } else {
+        const remove = el('button', 'btn btn-ghost btn-icon');
+        remove.type = 'button';
+        remove.setAttribute('aria-label', t('css.delete'));
+        remove.title = t('css.delete');
+        remove.appendChild(icon('trash'));
+        remove.addEventListener('click', function () {
+          state.cssConfirmDelete = file.id;
+          renderPage();
+        });
+        row.appendChild(remove);
+      }
+    }
+
+    list.appendChild(row);
+  });
+  files.appendChild(list);
+
+  const hasSnippets = state.cssFiles.some(function (file) { return file.kind === 'snippet'; });
+  if (!hasSnippets) files.appendChild(el('p', 'css-empty', t('css.emptyHint')));
+
+  if (state.cssNewOpen) {
+    const form = el('form', 'css-new');
+    const input = el('input', 'input');
+    input.type = 'text';
+    input.placeholder = t('css.newName');
+    input.value = state.cssNewName;
+    input.setAttribute('aria-label', t('css.newName'));
+    input.setAttribute('autocomplete', 'off');
+    input.spellcheck = false;
+    input.addEventListener('input', function () { state.cssNewName = input.value; });
+    form.appendChild(input);
+    form.appendChild(makeButton(t('css.create'), 'primary', {
+      onClick: function () { createCssSnippet(input.value); }
+    }));
+    form.appendChild(makeButton(t('css.cancel'), 'ghost', {
+      onClick: function () {
+        state.cssNewOpen = false;
+        state.cssNewName = '';
+        renderPage();
+      }
+    }));
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      createCssSnippet(input.value);
+    });
+    files.appendChild(form);
+  }
+
+  layout.appendChild(files);
+
+  const editor = el('div', 'css-editor');
+  const bar = el('div', 'css-editor-head');
+  const title = el('div', 'css-editor-title');
+  title.appendChild(el('span', 'css-editor-name', state.cssActive === 'user' ? t('css.userFile') : state.cssActive + '.css'));
+  const dot = el('span', 'css-dot');
+  dot.hidden = !state.cssDirty;
+  title.appendChild(dot);
+  bar.appendChild(title);
+
+  const counter = el('span', 'css-count', t('css.chars', { count: state.cssDraft.length }));
+
+  const actions = el('div', 'css-editor-actions');
+  actions.appendChild(makeButton(t('css.reload'), 'ghost', {
+    onClick: function () { loadCssFile(state.cssActive); }
+  }));
+  const save = makeButton(t('css.save'), 'primary', {
+    disabled: !state.cssDirty || state.cssBusy === 'save',
+    onClick: function () { saveCssFile(); }
+  });
+  actions.appendChild(save);
+  bar.appendChild(actions);
+  editor.appendChild(bar);
+
+  const area = el('textarea', 'css-textarea');
+  area.spellcheck = false;
+  area.setAttribute('aria-label', t('css.title'));
+  area.value = state.cssDraft;
+  area.addEventListener('input', function () {
+    state.cssDraft = area.value;
+    state.cssDirty = true;
+    dot.hidden = false;
+    save.disabled = false;
+    counter.textContent = t('css.chars', { count: area.value.length });
+  });
+  area.addEventListener('keydown', function (event) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      if (state.cssDirty) saveCssFile();
+    }
+  });
+  editor.appendChild(area);
+
+  const foot = el('div', 'css-foot');
+  foot.appendChild(el('span', 'css-foot-hint', t('css.hint')));
+  foot.appendChild(counter);
+  editor.appendChild(foot);
+
+  layout.appendChild(editor);
+  host.appendChild(layout);
 }
 
 /* ---------- Tools ---------- */

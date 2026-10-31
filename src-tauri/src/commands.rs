@@ -1,5 +1,6 @@
-use crate::model::{Config, DiagnosticRow, Install, Module, Overview, Report, ThemeInfo};
+use crate::model::{Config, CssContent, CssFile, DiagnosticRow, Install, Module, Overview, Report, ThemeInfo};
 use crate::{apply, backup, config, detect, paths, process, store, themes, util};
+use std::path::PathBuf;
 
 fn extra_roots(config: &Config) -> Vec<String> {
     if config.spotify_path.is_empty() {
@@ -237,4 +238,128 @@ pub fn doctor(install_id: String) -> Vec<DiagnosticRow> {
     });
 
     rows
+}
+
+/* ---------- User CSS ---------- */
+
+/// Resolves "user" to user.css and any other id to snippets/<id>.css.
+fn css_path(id: &str) -> Option<PathBuf> {
+    if id == "user" {
+        return Some(paths::custom_css());
+    }
+    if id.is_empty() || id.contains("..") {
+        return None;
+    }
+    let safe = id
+        .chars()
+        .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_' || character == ' ');
+    if !safe {
+        return None;
+    }
+    Some(paths::user_snippets().join(format!("{}.css", id)))
+}
+
+fn css_size(path: &std::path::Path) -> usize {
+    std::fs::metadata(path)
+        .map(|meta| meta.len() as usize)
+        .unwrap_or(0)
+}
+
+#[tauri::command(async)]
+pub fn list_css_files() -> Vec<CssFile> {
+    let config = config::load();
+    let mut files = vec![CssFile {
+        id: "user".into(),
+        kind: "user".into(),
+        size: css_size(&paths::custom_css()),
+        enabled: true,
+    }];
+
+    if let Ok(entries) = std::fs::read_dir(paths::user_snippets()) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            if !name.to_lowercase().ends_with(".css") || name.len() <= 4 {
+                continue;
+            }
+            let id = name[..name.len() - 4].to_string();
+            let enabled = config.snippets.iter().any(|value| value == &id);
+            files.push(CssFile {
+                id,
+                kind: "snippet".into(),
+                size: css_size(&entry.path()),
+                enabled,
+            });
+        }
+    }
+
+    files.sort_by(|left, right| left.id.cmp(&right.id));
+    files
+}
+
+#[tauri::command(async)]
+pub fn read_css_file(id: String) -> CssContent {
+    let Some(path) = css_path(&id) else {
+        return CssContent {
+            ok: false,
+            content: String::new(),
+            message: "Invalid file name.".into(),
+        };
+    };
+
+    CssContent {
+        ok: true,
+        content: std::fs::read_to_string(&path).unwrap_or_default(),
+        message: String::new(),
+    }
+}
+
+#[tauri::command(async)]
+pub fn save_css_file(id: String, content: String) -> Report {
+    let Some(path) = css_path(&id) else {
+        return Report::coded("bad-name", "Invalid file name.");
+    };
+
+    if let Some(parent) = path.parent() {
+        if let Err(error) = std::fs::create_dir_all(parent) {
+            return Report::error(error.to_string());
+        }
+    }
+
+    match util::write_atomic(&path, content.as_bytes()) {
+        Ok(()) => Report::ok(""),
+        Err(error) => Report::error(error),
+    }
+}
+
+#[tauri::command(async)]
+pub fn delete_css_file(id: String) -> Report {
+    if id == "user" {
+        return Report::coded("protected", "The main user.css cannot be deleted.");
+    }
+    let Some(path) = css_path(&id) else {
+        return Report::coded("bad-name", "Invalid file name.");
+    };
+
+    if let Err(error) = std::fs::remove_file(&path) {
+        if error.kind() != std::io::ErrorKind::NotFound {
+            return Report::error(error.to_string());
+        }
+    }
+
+    let mut config = config::load();
+    config.snippets.retain(|value| value != &id);
+    save_report(crate::config::save(&config))
+}
+
+#[tauri::command(async)]
+pub fn set_snippet_enabled(id: String, enabled: bool) -> Report {
+    let mut config = config::load();
+    if enabled {
+        if !config.snippets.iter().any(|value| value == &id) {
+            config.snippets.push(id);
+        }
+    } else {
+        config.snippets.retain(|value| value != &id);
+    }
+    save_report(crate::config::save(&config))
 }

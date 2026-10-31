@@ -17,6 +17,7 @@
 | Theme | 9 theme dựng sẵn + tự thả theme vào thư mục dữ liệu |
 | Tiện ích | 11 extension: adblock, auto skip explicit, quick keys, track copy, volume memory/wheel, playback speed, like hotkey, hide sidebar, focus mode, skip short tracks |
 | Màu | 6 màu giao diện (nhấn, nền, sidebar, card, chữ, chữ mờ) + CSS tuỳ ý |
+| CSS riêng | Soạn `user.css` và các snippet ngay trong app, bật/tắt từng file, lưu bằng `Ctrl+S`, có đếm ký tự |
 | An toàn | Sao lưu theo **từng phiên bản Spotify**, payload ghi qua thư mục tạm rồi đổi chỗ, `Khôi phục` trả client về nguyên bản |
 | Song ngữ | Việt / Anh, đổi ngay trong app |
 
@@ -37,14 +38,17 @@ themes\                 ← 9 theme
 snippets\               ← đoạn CSS
 ```
 
-## Bốn trang trong app
+## Năm trang trong app
 
 | Trang | Việc |
 | --- | --- |
 | **Tổng quan** | Chọn bản Spotify, xem phiên bản/kiến trúc/trạng thái vá/thông tin sao lưu, và chạy Apply · Khôi phục · Sao lưu · Khởi động lại · Mở thư mục |
 | **Module** | Bật/tắt tiện ích, chọn theme, bật snippet; tìm kiếm theo tên |
 | **Giao diện** | Chọn theme cho Spotify và chỉnh 6 màu, có ô xem trước |
+| **CSS** | Soạn `user.css` và các snippet tự tạo; bật/tắt, xoá, tạo file mới, lưu bằng `Ctrl+S` |
 | **Công cụ** | Ngôn ngữ, Safe mode, kiểm tra cập nhật, đường dẫn Spotify, bảng chẩn đoán |
+
+![CSS](docs/screenshots/css.png)
 
 Thao tác làm thay đổi client đều ghi ngay vào `Apps\xpui`; **khởi động lại Spotify** để thấy kết quả (nút *Khởi động lại* trong app làm việc này).
 
@@ -119,7 +123,7 @@ Dữ liệu người dùng nằm ở `%APPDATA%\spotify-extension` — xoá thư
 
 ```
 src-tauri/     Rust + Tauri 2 (app quản lý)
-ui/            HTML/CSS/JS thuần, được nhúng vào exe
+ui/            index.html + app.js + styles/ (tokens, layout, components, pages)
 src/payload/   TypeScript chạy trong Spotify (esbuild → dist/payload/runtime.js)
 extensions/    tiện ích .js
 themes/        theme .css
