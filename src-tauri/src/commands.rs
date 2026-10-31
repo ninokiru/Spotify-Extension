@@ -35,7 +35,7 @@ pub fn get_overview() -> Overview {
 }
 
 #[tauri::command(async)]
-pub fn apply(install_id: String) -> Report {
+pub fn apply(install_id: String, force: bool) -> Report {
     let Some(install) = find_install(&install_id) else {
         return Report::coded("not-found", "Spotify install not found.");
     };
@@ -48,6 +48,9 @@ pub fn apply(install_id: String) -> Report {
     }
     if !util::is_file(&paths::runtime_file()) {
         return Report::coded("no-asset", "runtime/runtime.js is missing next to the app.");
+    }
+    if !force && process::running() {
+        return Report::coded("spotify-running", "Close Spotify before applying.");
     }
 
     let config = config::load();
@@ -62,10 +65,13 @@ pub fn apply(install_id: String) -> Report {
 }
 
 #[tauri::command(async)]
-pub fn restore(install_id: String) -> Report {
+pub fn restore(install_id: String, force: bool) -> Report {
     let Some(install) = find_install(&install_id) else {
         return Report::coded("not-found", "Spotify install not found.");
     };
+    if !force && process::running() {
+        return Report::coded("spotify-running", "Close Spotify before restoring.");
+    }
 
     match backup::restore(&install) {
         Ok(found) => {
@@ -252,7 +258,7 @@ fn css_path(id: &str) -> Option<PathBuf> {
     }
     let safe = id
         .chars()
-        .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_' || character == ' ');
+        .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_');
     if !safe {
         return None;
     }
@@ -282,6 +288,13 @@ pub fn list_css_files() -> Vec<CssFile> {
                 continue;
             }
             let id = name[..name.len() - 4].to_string();
+            let usable = !id.is_empty()
+                && id
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_');
+            if !usable {
+                continue;
+            }
             let enabled = config.snippets.iter().any(|value| value == &id);
             files.push(CssFile {
                 id,

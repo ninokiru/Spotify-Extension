@@ -682,3 +682,4 @@
 .import-row { display: flex; gap: var(--sp-2); margin-top: var(--sp-2); }
 .import-row .input { flex: 1; min-width: 0; }
 .card-note { margin: var(--sp-2) 0 0; font-size: var(--fs-11); color: var(--text-faint); }
+.css-preview-note { margin: 0; padding: 8px 12px; border-top: 1px solid var(--line); font-size: var(--fs-11); color: var(--text-faint); }

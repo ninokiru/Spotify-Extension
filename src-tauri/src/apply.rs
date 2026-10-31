@@ -492,13 +492,35 @@ fn ensure_client_folder(install: &Install) -> Result<(), String> {
         let packed = Path::new(install.root.as_str())
             .join("Apps")
             .join("xpui.spa");
+        let parent = xpui.parent().unwrap_or_else(|| Path::new(install.root.as_str()));
+        let staging = parent.join("xpui.sxe-new");
+        let previous = parent.join("xpui.sxe-old");
+
+        // The new folder is built beside the old one first, so a failed
+        // extraction never leaves Spotify without a client to fall back to.
+        util::remove_dir(&staging);
+        extract_zip(&packed, &staging)?;
+
+        let marker = util::packed_fingerprint(&install.version, &packed);
+        util::write_atomic(&staging.join(paths::SPA_MARKER), marker.as_bytes())?;
 
         if util::is_dir(xpui) {
-            util::remove_dir(xpui);
+            util::remove_dir(&previous);
+            if let Err(error) = fs::rename(xpui, &previous) {
+                util::remove_dir(&staging);
+                return Err(format!("Could not replace {}: {}", xpui.display(), error));
+            }
+            if let Err(error) = fs::rename(&staging, xpui) {
+                let _ = fs::rename(&previous, xpui);
+                util::remove_dir(&staging);
+                return Err(format!("Could not install {}: {}", xpui.display(), error));
+            }
+            util::remove_dir(&previous);
+        } else if let Err(error) = fs::rename(&staging, xpui) {
+            util::remove_dir(&staging);
+            return Err(format!("Could not install {}: {}", xpui.display(), error));
         }
-        extract_zip(&packed, xpui)?;
-        let marker = util::packed_fingerprint(&install.version, &packed);
-        util::write_atomic(&xpui.join(paths::SPA_MARKER), marker.as_bytes())?;
+
         return Ok(());
     }
 
@@ -552,6 +574,7 @@ fn extract_zip(archive_path: &Path, target: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
 
     #[test]
     fn escapes_manifest_strings() {
@@ -561,5 +584,82 @@ mod tests {
         assert_eq!(json_escape("<&>"), "\\u003c\\u0026\\u003e");
         assert_eq!(json_escape("\u{1}"), "\\u0001");
         assert_eq!(json_escape("tiếng Việt"), "tiếng Việt");
+    }
+
+    fn temp_root(name: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!("sxe-apply-{}-{}", std::process::id(), name));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).expect("temp root");
+        root
+    }
+
+    fn write_spa(path: &Path, body: &str) {
+        let file = fs::File::create(path).expect("create spa");
+        let mut writer = zip::ZipWriter::new(file);
+        writer
+            .start_file("index.html", zip::write::SimpleFileOptions::default())
+            .expect("start entry");
+        writer.write_all(body.as_bytes()).expect("write entry");
+        writer.finish().expect("finish zip");
+    }
+
+    fn install_for(root: &Path, version: &str) -> Install {
+        let xpui = root.join("Apps").join("xpui");
+        Install {
+            id: "test-install".into(),
+            name: "Test".into(),
+            root: root.to_string_lossy().to_string(),
+            xpui_path: xpui.to_string_lossy().to_string(),
+            variant: "desktop".into(),
+            version: version.into(),
+            arch: "x64".into(),
+            state: "stock".into(),
+            patched_by: "none".into(),
+            spa: false,
+            has_backup: false,
+            backup_at: String::new(),
+        }
+    }
+
+    #[test]
+    fn extracts_a_packed_client_once_per_version() {
+        let root = temp_root("packed");
+        let apps = root.join("Apps");
+        fs::create_dir_all(&apps).expect("apps");
+        write_spa(&apps.join("xpui.spa"), "<html><body>original</body></html>");
+
+        let install = install_for(&root, "1.0.0");
+        assert!(packed_pending(&install));
+        ensure_client_folder(&install).expect("extract");
+
+        let xpui = apps.join("xpui");
+        assert!(xpui.join("index.html").is_file());
+        assert!(xpui.join(paths::SPA_MARKER).is_file());
+        assert!(!packed_pending(&install));
+
+        // A new version makes the extracted folder stale again.
+        let next = install_for(&root, "1.1.0");
+        assert!(packed_pending(&next));
+        ensure_client_folder(&next).expect("re-extract");
+        assert!(!packed_pending(&next));
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn keeps_the_previous_folder_when_the_archive_is_broken() {
+        let root = temp_root("broken");
+        let apps = root.join("Apps");
+        let xpui = apps.join("xpui");
+        fs::create_dir_all(&xpui).expect("xpui");
+        fs::write(xpui.join("index.html"), "<html>old</html>").expect("old index");
+        fs::write(apps.join("xpui.spa"), "definitely not a zip").expect("bad spa");
+
+        let install = install_for(&root, "2.0.0");
+        assert!(packed_pending(&install));
+        assert!(ensure_client_folder(&install).is_err());
+        assert!(xpui.join("index.html").is_file());
+
+        let _ = fs::remove_dir_all(&root);
     }
 }

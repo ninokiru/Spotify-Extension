@@ -32,6 +32,7 @@ const DICT = {
     'css.chars': '{count} ký tự',
     'css.preview': 'Xem trước',
     'css.previewHint': 'Cập nhật khi bạn gõ',
+    'css.previewNote': 'Đây là mô phỏng — kết quả thật trong Spotify có thể khác.',
     'css.loadError': 'Không đọc được danh sách CSS.',
     'css.nameTaken': 'Tên này đã có.',
     'css.badName': 'Tên chỉ dùng chữ, số, dấu gạch ngang và gạch dưới.',
@@ -100,6 +101,9 @@ const DICT = {
     'overview.warnSafe': 'Chế độ an toàn đang bật.',
     'overview.noBackup': 'Chưa có',
     'overview.warnSpa': 'Bản cài dạng gói xpui.spa — Áp dụng sẽ giải nén ra Apps\\xpui (và giải nén lại mỗi khi Spotify cập nhật), gói gốc giữ nguyên.',
+    'overview.warnSpotifyRunning': 'Spotify đang chạy — file có thể bị khoá khi thao tác.',
+    'overview.continueAnyway': 'Vẫn tiếp tục',
+    'err.spotify-running': 'Spotify đang chạy. Đóng Spotify rồi thử lại.',
     'overview.turnOff': 'Tắt',
     'overview.restartNow': 'Khởi động lại',
     'overview.unsupported': 'Bản Spotify này không hỗ trợ.',
@@ -266,6 +270,7 @@ const DICT = {
     'css.chars': '{count} characters',
     'css.preview': 'Preview',
     'css.previewHint': 'Updates as you type',
+    'css.previewNote': 'This is a simulation — the real Spotify result may differ.',
     'css.loadError': 'Could not read the CSS files.',
     'css.nameTaken': 'That name is already used.',
     'css.badName': 'Use letters, digits, dashes and underscores only.',
@@ -334,6 +339,9 @@ const DICT = {
     'overview.warnSafe': 'Safe mode is on.',
     'overview.noBackup': 'None',
     'overview.warnSpa': 'This client ships as xpui.spa — applying extracts it into Apps\\xpui and re-extracts it after every Spotify update, leaving the archive untouched.',
+    'overview.warnSpotifyRunning': 'Spotify is running — files may be locked while this runs.',
+    'overview.continueAnyway': 'Continue anyway',
+    'err.spotify-running': 'Spotify is running. Close it and try again.',
     'overview.turnOff': 'Turn off',
     'overview.restartNow': 'Restart',
     'overview.unsupported': 'This Spotify build is not supported.',
@@ -558,7 +566,8 @@ const state = {
   uiTheme: 'dark',
   uiAccent: 'green',
   spicetifyPath: '',
-  importBusy: false
+  importBusy: false,
+  pendingRunAction: ''
 };
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -1599,6 +1608,12 @@ function makeBanner(tone, iconName, message, actionLabel, action) {
 
 function warningBanners(install) {
   const list = el('div', 'banners');
+  if (state.pendingRunAction) {
+    const action = state.pendingRunAction;
+    list.appendChild(makeBanner('warn', 'alert', t('overview.warnSpotifyRunning'), t('overview.continueAnyway'), function () {
+      runInstallAction(action, true);
+    }));
+  }
   if (install.state === 'patched' && state.running) {
     list.appendChild(makeBanner('warn', 'alert', t('overview.warnRunning'), t('overview.restartNow'), function () {
       runInstallAction('restart');
@@ -1760,22 +1775,23 @@ function renderOverviewPage(page) {
   page.appendChild(card);
 }
 
-async function runInstallAction(action) {
+async function runInstallAction(action, force) {
   if (state.overviewBusy) return;
   const install = selectedInstall();
   if (!install) return;
   state.overviewBusy = action;
   state.confirmRestore = false;
+  state.pendingRunAction = '';
   renderPage();
   const wasRunning = state.running;
   try {
     let report;
     if (action === 'apply') {
-      report = await call('apply', { installId: install.id });
+      report = await call('apply', { installId: install.id, force: !!force });
       assertReport(report);
       showToast(t(wasRunning ? 'toast.appliedRestart' : 'toast.applied'), 'ok');
     } else if (action === 'restore') {
-      report = await call('restore', { installId: install.id });
+      report = await call('restore', { installId: install.id, force: !!force });
       assertReport(report);
       toastOk('toast.restored');
     } else if (action === 'backup') {
@@ -1792,6 +1808,10 @@ async function runInstallAction(action) {
       assertReport(report);
     }
   } catch (error) {
+    if (error && error.code === 'spotify-running') {
+      state.pendingRunAction = action;
+      return;
+    }
     toastError(error);
   } finally {
     state.overviewBusy = '';
@@ -2683,6 +2703,7 @@ function renderCssPage(host) {
   frame.setAttribute('title', t('css.preview'));
   frame.srcdoc = previewDocument(state.cssDraft);
   preview.appendChild(frame);
+  preview.appendChild(el('p', 'css-preview-note', t('css.previewNote')));
   layout.appendChild(preview);
 
   host.appendChild(layout);
