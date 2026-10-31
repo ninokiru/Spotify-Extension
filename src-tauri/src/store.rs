@@ -40,6 +40,7 @@ static SEEDS: &[Seed] = &[
     Seed { id: "TokyoNight", name: "Tokyo Night", description: "Deep blue night with a bright blue accent.", description_vi: "Màu đêm xanh sâu với điểm nhấn xanh sáng.", version: "1.0.0", kind: THEME, glyph: "palette", accent: ["#1a1b26", "#12131c"], file: "user.css" },
     Seed { id: "RosePine", name: "Rosé Pine", description: "Soft rose and lilac on a pine background.", description_vi: "Hồng dây và tím nhạt trên nền xanh thông.", version: "1.0.0", kind: THEME, glyph: "palette", accent: ["#191724", "#12101c"], file: "user.css" },
     Seed { id: "Solarized", name: "Solarized", description: "Low contrast teal and sand, easy on the eyes.", description_vi: "Xanh lam và cát tương phản thấp, dịu mắt.", version: "1.0.0", kind: THEME, glyph: "palette", accent: ["#002b36", "#073642"], file: "user.css" },
+    Seed { id: "Aurora", name: "Aurora", description: "Deep night blue with a mint accent, floating panels and lifted cards.", description_vi: "Xanh đêm sâu, accent mint, panel nổi bo góc và card nhấc nhẹ khi hover.", version: "1.0.0", kind: THEME, glyph: "palette", accent: ["#0b0f14", "#58e1a8"], file: "user.css" },
     Seed { id: "hide-window-controls", name: "Hide window controls", description: "Hides the Windows window buttons so Spotify fills the screen.", description_vi: "Ẩn nút cửa sổ Windows để Spotify chiếm hết màn hình.", version: "1.0.0", kind: SNIPPET, glyph: "window", accent: ["#20242b", "#12151a"], file: "hide-window-controls.css" },
 ];
 

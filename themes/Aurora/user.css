@@ -1,0 +1,186 @@
+/* Aurora — nền xanh đêm, accent mint, panel bo góc với viền hairline.
+   File này được nối sau colors.css nên có thể đè cả bảng màu lẫn cấu trúc.
+   Chỉ dùng biến --spice-* và biến cục bộ --aurora-*, không hardcode trong rule. */
+
+.Root {
+  --spice-main: #0b0f14;
+  --spice-sidebar: #0f141b;
+  --spice-player: #0f141b;
+  --spice-card: #151c25;
+  --spice-text: #e8eef6;
+  --spice-subtext: #9fb0c3;
+  --spice-button: #58e1a8;
+  --spice-button-active: #7ff0c2;
+  --spice-tab-active: #1b2430;
+  --spice-selected-row: #1d2733;
+
+  --aurora-line: rgba(232, 238, 246, 0.08);
+  --aurora-line-strong: rgba(232, 238, 246, 0.14);
+  --aurora-raise: rgba(232, 238, 246, 0.045);
+  --aurora-shadow: 0 10px 28px rgba(3, 7, 12, 0.45);
+  --aurora-radius: 14px;
+}
+
+/* ---------- Khung chung ---------- */
+
+.Root__nav-bar,
+.Root__main-view,
+.Root__now-playing-bar {
+  border: 1px solid var(--aurora-line);
+  border-radius: var(--aurora-radius);
+  background-clip: padding-box;
+  overflow: hidden;
+}
+
+.Root__nav-bar { background: var(--spice-sidebar); }
+.Root__main-view { background: var(--spice-main); }
+.Root__now-playing-bar { background: var(--spice-player); }
+
+.Root__top-bar {
+  background: transparent;
+  border-bottom: 1px solid transparent;
+}
+
+/* ---------- Sidebar ---------- */
+
+.Root__nav-bar a,
+.Root__nav-bar [role="button"] {
+  border-radius: 8px;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.Root__nav-bar a:hover,
+.Root__nav-bar [role="button"]:hover {
+  background: var(--aurora-raise);
+}
+
+.Root__nav-bar [aria-current="page"] {
+  background: var(--spice-tab-active);
+  box-shadow: inset 2px 0 0 var(--spice-button);
+}
+
+.Root__nav-bar .main-yourLibraryX-listItem[aria-selected="true"] {
+  background: var(--spice-selected-row);
+}
+
+/* Bao quanh danh sách thư viện bằng một panel lõm nhẹ */
+.Root__nav-bar .main-yourLibraryX-libraryContainer {
+  background: linear-gradient(180deg, var(--aurora-raise), transparent 120px);
+  border-radius: 12px;
+}
+
+/* ---------- Card ---------- */
+
+.main-card-card,
+.main-gridContainer-gridContainer .card {
+  background: var(--spice-card);
+  border: 1px solid var(--aurora-line);
+  border-radius: 12px;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.main-card-card:hover,
+.main-gridContainer-gridContainer .card:hover {
+  transform: translateY(-2px);
+  border-color: var(--aurora-line-strong);
+  background: color-mix(in srgb, var(--spice-card) 86%, var(--spice-text));
+  box-shadow: var(--aurora-shadow);
+}
+
+.main-card-card:focus-visible,
+.main-gridContainer-gridContainer .card:focus-visible {
+  outline: 2px solid var(--spice-button);
+  outline-offset: 2px;
+}
+
+.main-card-card img,
+.main-cardImage-image {
+  border-radius: 8px;
+  transition: border-radius 160ms ease;
+}
+
+.main-card-card:hover img {
+  border-radius: 10px;
+}
+
+.main-card-card .main-card-cardHeader {
+  border-radius: 8px;
+}
+
+/* Nút phát nổi trên card chỉ hiện khi hover, giữ nguyên hành vi gốc */
+.main-card-card .main-playButton-PlayButton {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.main-card-card:hover .main-playButton-PlayButton,
+.main-card-card:focus-within .main-playButton-PlayButton {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- Player bar ---------- */
+
+.Root__now-playing-bar {
+  border-top: 1px solid var(--aurora-line);
+}
+
+.playback-bar__progress-time-elapsed,
+.playback-bar__progress-time {
+  color: var(--spice-subtext);
+  font-variant-numeric: tabular-nums;
+}
+
+.playback-bar .x-progressBar-progressBarBg {
+  background: var(--aurora-line-strong);
+}
+
+.playback-bar .x-progressBar-fillColor,
+.playback-bar .progress-bar__slider {
+  background: var(--spice-button);
+  border-radius: 999px;
+}
+
+.playback-bar:hover .progress-bar__slider {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--spice-button) 25%, transparent);
+}
+
+.main-nowPlayingBar-nowPlayingBar:hover {
+  background: color-mix(in srgb, var(--spice-player) 92%, var(--spice-text));
+}
+
+.main-trackInfo-name a { color: var(--spice-text); }
+.main-trackInfo-artists a { color: var(--spice-subtext); }
+
+/* ---------- Thanh cuộn ---------- */
+
+.main-view-container__scroll-node::-webkit-scrollbar { width: 10px; }
+
+.main-view-container__scroll-node::-webkit-scrollbar-thumb {
+  background: var(--aurora-line-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.main-view-container__scroll-node::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--spice-subtext) 60%, transparent);
+  background-clip: padding-box;
+}
+
+/* ---------- Tôn trọng giảm chuyển động ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .main-card-card,
+  .main-card-card img,
+  .main-card-card .main-playButton-PlayButton,
+  .Root__nav-bar a,
+  .Root__nav-bar [role="button"] {
+    transition: none;
+  }
+
+  .main-card-card:hover { transform: none; }
+  .main-card-card:hover img { border-radius: 8px; }
+  .main-card-card .main-playButton-PlayButton { transform: none; }
+}

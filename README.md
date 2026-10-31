@@ -14,13 +14,15 @@
 | Nhóm | Nội dung |
 | --- | --- |
 | Bảng điều khiển trong Spotify | Nút nổi góc phải dưới: thông tin bài đang phát, chép link/URI, đổi màu nhấn, lời bài hát đồng bộ từ LRCLIB, tua ±10 giây, popup tên bài, đếm ngược thời gian, chẩn đoán |
-| Theme | 9 theme dựng sẵn + tự thả theme vào thư mục dữ liệu |
+| Theme | 10 theme dựng sẵn + tự thả theme vào thư mục dữ liệu |
 | Tiện ích | 11 extension: adblock, auto skip explicit, quick keys, track copy, volume memory/wheel, playback speed, like hotkey, hide sidebar, focus mode, skip short tracks |
 | Màu | 6 màu giao diện (nhấn, nền, sidebar, card, chữ, chữ mờ) + CSS tuỳ ý |
 | CSS riêng | Soạn `user.css` và các snippet ngay trong app, **xem trước ngay khi gõ**, bật/tắt từng file, lưu bằng `Ctrl+S` |
 | Theme Spicetify | Nhập thư mục theme Spicetify (`color.ini` + `user.css`); app tự chuyển bảng màu sang 6 màu của mình |
 | An toàn | Sao lưu theo **từng phiên bản Spotify**, payload ghi qua thư mục tạm rồi đổi chỗ, `Khôi phục` trả client về nguyên bản |
 | Song ngữ | Việt / Anh, đổi ngay trong app |
+
+![Theme Aurora](docs/screenshots/theme-aurora.png)
 
 ## Cài đặt
 
@@ -35,12 +37,11 @@ Cấu trúc thư mục sau khi giải nén:
 spotify-extension.exe
 runtime\runtime.js      ← payload tiêm vào Spotify
 extensions\             ← 11 tiện ích
-themes\                 ← 9 theme
+themes\                 ← 10 theme
 snippets\               ← đoạn CSS
 ```
 
 ## Năm trang trong app
-
 | Trang | Việc |
 | --- | --- |
 | **Tổng quan** | Chọn bản Spotify, xem phiên bản/kiến trúc/trạng thái vá/thông tin sao lưu, và chạy Apply · Khôi phục · Sao lưu · Khởi động lại · Mở thư mục |
