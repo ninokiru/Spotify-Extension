@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Hướng C — Technical mono · Spotify Extension</title>
+<style>
+  :root{
+    --bg:#060807; --surface:#0b0e0c; --surface-2:#101512; --surface-3:#151c17;
+    --line:#1e2621; --line-strong:#2d3832;
+    --text:#d9e2dc; --dim:#8e9b93; --faint:#7e8d84;
+    --accent:#4ade80; --accent-hover:#6ee79a; --accent-soft:#0d2417; --accent-ink:#03140a;
+    --warn:#e3b341; --warn-soft:#14110a; --warn-line:#5a4a1e;
+    --danger:#ff7b72;
+    --r:2px; --r-sm:3px;
+    --mono:"Cascadia Mono","Cascadia Code",Consolas,"SFMono-Regular",monospace;
+    --dur:120ms; --ease:steps(1,end);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{width:1000px;height:700px;margin:0;padding:0;overflow:hidden}
+  body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit}
+  .window{width:1000px;height:700px;display:grid;grid-template-rows:40px 1fr;overflow:hidden;background:var(--bg);box-shadow:inset 0 0 0 1px var(--line)}
+  .sprite{position:absolute;width:0;height:0;overflow:hidden}
+  .ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* chrome */
+  .titlebar{display:flex;align-items:center;gap:9px;padding:0 12px 0 14px;background:#040605;border-bottom:1px solid var(--line);user-select:none}
+  .tb-name{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--text)}
+  .tb-sub{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .tb-spacer{flex:1}
+  .tb-ver{font-size:9px;color:var(--faint);letter-spacing:.04em;margin-right:6px}
+  .win-controls{display:flex;align-items:center;gap:10px;padding-right:2px}
+  .wbtn{width:13px;height:13px;border-radius:50%;border:1px solid var(--line-strong);display:grid;place-items:center;color:var(--dim);transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .wbtn svg{width:7px;height:7px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round}
+  .wbtn:hover{background:var(--surface-2);border-color:var(--faint);color:var(--text)}
+  .wbtn.close:hover{background:#b3403a;border-color:#b3403a;color:#fff}
+
+  /* shell */
+  .app{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0}
+  .sidebar{display:flex;flex-direction:column;min-height:0;padding:0 12px;background:#050706;border-right:1px solid var(--line)}
+  .brand{height:56px;display:flex;align-items:center;gap:10px;padding:0 8px}
+  .brand-mark{width:24px;height:24px;flex:none;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--surface);color:var(--accent)}
+  .brand-mark svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .brand-id{display:flex;flex-direction:column;min-width:0}
+  .brand-name{font-size:16px;font-weight:700;line-height:1.1;letter-spacing:.02em}
+  .brand-sub{font-size:8.5px;line-height:1.3;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+  .side-label{margin:16px 0 6px;padding:0 9px;font-size:8.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav-item{position:relative;display:grid;grid-template-columns:16px 18px minmax(0,1fr);align-items:center;gap:8px;height:32px;padding:0 8px;border:1px solid transparent;border-radius:var(--r);color:var(--dim);text-decoration:none;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .nav-idx{font-size:8.5px;font-weight:400;color:var(--faint);letter-spacing:.02em}
+  .nav-item .ico{width:18px;height:18px;color:var(--faint)}
+  .nav-item:hover{background:var(--surface-2);color:var(--text)}
+  .nav-item:hover .ico{color:var(--dim)}
+  .nav-item[aria-current="page"]{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+  .nav-item[aria-current="page"] .ico,.nav-item[aria-current="page"] .nav-idx{color:var(--accent)}
+  .nav-item[aria-current="page"]::before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:2px;background:var(--accent)}
+  .nav-item:focus-visible{outline-offset:-2px}
+  .side-foot{margin-top:auto;padding:11px 8px 13px;border-top:1px dashed var(--line)}
+  .foot-line{display:flex;align-items:center;justify-content:space-between;font-size:8.5px;line-height:1.6;letter-spacing:.05em;color:var(--faint)}
+  .foot-line .ok{display:inline-flex;align-items:center;gap:5px;color:var(--accent)}
+  .led{width:5px;height:5px;flex:none;background:var(--accent)}
+
+  /* main */
+  .main{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--bg)}
+  .topbar{height:60px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:17px;font-weight:700;line-height:1.2;letter-spacing:.06em;text-transform:uppercase}
+  .chip{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 7px;border:1px solid var(--accent);border-radius:var(--r);background:var(--accent-soft);color:var(--accent);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .chip::before{content:"";width:4px;height:4px;background:currentColor}
+  .spacer{flex:1}
+  .refresh{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 8px;border:1px solid var(--line-strong);border-radius:var(--r);background:transparent;color:var(--dim);font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .refresh .ico{width:13px;height:13px}
+  .refresh:hover{background:var(--surface-2);border-color:var(--faint);color:var(--text)}
+
+  .content{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px 20px 14px;overflow:hidden}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+  .p-head{display:flex;align-items:center;justify-content:space-between;gap:10px;height:30px;padding:0 12px;border-bottom:1px solid var(--line);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .p-head .p-meta{font-weight:400;letter-spacing:.04em;color:var(--faint)}
+
+  .inst-body{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;padding:14px 12px}
+  .inst-left{padding-right:18px;border-right:1px dashed var(--line);min-width:0}
+  .kicker{font-size:8.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .app-name{margin-top:5px;font-size:14px;font-weight:700;line-height:1.2;letter-spacing:.01em}
+  .big-version{margin-top:3px;font-size:20px;font-weight:700;line-height:1.15;letter-spacing:-.01em;color:var(--accent)}
+  .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .tag{display:inline-flex;align-items:center;height:17px;padding:0 5px;border:1px solid var(--line);border-radius:var(--r);font-size:8.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+  .inst-right{min-width:0}
+  .line{display:grid;grid-template-columns:64px minmax(0,1fr) auto auto;align-items:center;gap:8px;min-height:42px;border-bottom:1px dotted var(--line)}
+  .line:last-child{border-bottom:0}
+  .k{font-size:8.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .v{min-width:0;font-size:10.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v.mono{letter-spacing:-.01em}
+  .state{font-size:8.5px;font-weight:700;letter-spacing:.08em;color:var(--faint)}
+  .state.ok{color:var(--accent)}
+  .copy{width:20px;height:20px;flex:none;display:grid;place-items:center;border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--faint);cursor:pointer;transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .copy .ico{width:12px;height:12px}
+  .copy:hover{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+
+  .actions{display:flex;flex-wrap:wrap;gap:6px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--r);background:transparent;color:var(--text);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+  .btn .ico{width:16px;height:16px}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+  .btn-primary:active{background:var(--accent)}
+  .btn:hover{border-color:var(--faint)}
+  .btn-primary:hover{border-color:var(--accent-hover)}
+  .btn-secondary{background:var(--surface-2)}
+  .btn-secondary:hover{background:var(--surface-3)}
+  .btn-ghost{border-color:transparent;color:var(--dim)}
+  .btn-ghost:hover{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+
+  .warn{display:flex;align-items:center;gap:8px;min-height:40px;padding:6px 10px;border:1px dashed var(--warn-line);border-radius:var(--r);background:var(--warn-soft);color:var(--warn);font-size:10px;line-height:1.4}
+  .warn .ico{width:14px;height:14px}
+  .warn .msg{min-width:0}
+  .warn .link{margin-left:auto;flex:none;height:24px;padding:0 6px;border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--warn);font-size:8.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .warn .link:hover{border-color:var(--warn-line);background:#1d180d}
+  .warn .link:focus-visible{outline-offset:1px}
+
+  .mods{overflow:hidden}
+  .mrow{display:grid;grid-template-columns:6px 18px minmax(0,1fr) 54px 56px;align-items:center;gap:10px;min-height:58px;padding:7px 12px;border-top:1px dotted var(--line);transition:background-color var(--dur) var(--ease)}
+  .mrow:first-of-type{border-top:0}
+  .mrow:hover{background:var(--surface-2)}
+  .mrow .led{width:5px;height:5px;background:var(--accent)}
+  .mrow .led.off{background:var(--line-strong)}
+  .mod-ico{display:grid;place-items:center;color:var(--dim)}
+  .mod-ico .ico{width:18px;height:18px}
+  .mod-name{margin:0;font-size:10.5px;font-weight:700;line-height:1.35;letter-spacing:.05em;text-transform:uppercase}
+  .mod-desc{margin:1px 0 0;font-size:9px;line-height:1.35;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ver{font-size:8.5px;color:var(--faint);white-space:nowrap}
+  .switch{position:relative;height:18px;padding:0 5px;border:1px solid var(--line-strong);border-radius:var(--r);background:transparent;color:var(--faint);font-size:8.5px;font-weight:700;letter-spacing:.08em;cursor:pointer;transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+  .switch::before{content:"";position:absolute;inset:-7px -5px}
+  .switch[aria-checked="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .switch:hover{border-color:var(--faint)}
+  .switch[aria-checked="true"]:hover{border-color:var(--accent-hover)}
+  .switch:focus-visible{outline-offset:3px}
+  .active-tag{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;font-weight:700;letter-spacing:.05em;color:var(--accent);white-space:nowrap}
+  .active-tag .led{width:4px;height:4px}
+
+  .statusbar{height:26px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;border-top:1px solid var(--line);background:#040605;font-size:8.5px;letter-spacing:.04em;color:var(--faint)}
+  .statusbar .ok{display:inline-flex;align-items:center;gap:5px;color:var(--accent)}
+  .statusbar .mid{flex:1;text-align:center}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{transition-duration:.01ms !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h4a5 5 0 0 0 5-5c0-3.3-4-5-9-5Z"/><circle cx="7.5" cy="10" r=".8"/><circle cx="10" cy="6.8" r=".8"/><circle cx="14.5" cy="6.8" r=".8"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 0 0-5 5L4 17l3 3 5.5-5.5a4 4 0 0 0 5-5L14 13l-2.5-2.5 3-4Z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 6.3"/><path d="M20 4v7h-7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4V9Z"/><path d="M17 9.5a4 4 0 0 1 0 5"/><path d="M19.5 7a8 8 0 0 1 0 10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4Z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5V3Z"/><path d="M8 3v6h8V3"/><path d="M8 21v-7h8v7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"/></symbol>
+</svg>
+
+<div class="window">
+  <header class="titlebar">
+    <span class="tb-name">sxe</span>
+    <span class="tb-sub">Spotify Extension</span>
+    <span class="tb-spacer"></span>
+    <span class="tb-ver">v0.4.0</span>
+    <div class="win-controls" aria-hidden="true">
+      <span class="wbtn"><svg viewBox="0 0 10 10"><path d="M2.5 5h5"/></svg></span>
+      <span class="wbtn"><svg viewBox="0 0 10 10"><rect x="2.5" y="2.5" width="5" height="5"/></svg></span>
+      <span class="wbtn close"><svg viewBox="0 0 10 10"><path d="m2.8 2.8 4.4 4.4M7.2 2.8 2.8 7.2"/></svg></span>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 16 16"><path d="m4 5 3 3-3 3M8.5 11H12"/></svg>
+        </span>
+        <span class="brand-id"><span class="brand-name">sxe</span><span class="brand-sub">Spotify Extension</span></span>
+      </div>
+
+      <div class="side-label">// Điều hướng</div>
+      <nav class="nav" aria-label="Điều hướng chính">
+        <a class="nav-item" href="#/overview" aria-current="page">
+          <span class="nav-idx">01</span>
+          <svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg><span>Tổng quan</span>
+        </a>
+        <a class="nav-item" href="#/modules">
+          <span class="nav-idx">02</span>
+          <svg class="ico" aria-hidden="true"><use href="#i-layers"/></svg><span>Module</span>
+        </a>
+        <a class="nav-item" href="#/appearance">
+          <span class="nav-idx">03</span>
+          <svg class="ico" aria-hidden="true"><use href="#i-palette"/></svg><span>Giao diện</span>
+        </a>
+        <a class="nav-item" href="#/tools">
+          <span class="nav-idx">04</span>
+          <svg class="ico" aria-hidden="true"><use href="#i-wrench"/></svg><span>Công cụ</span>
+        </a>
+      </nav>
+
+      <div class="side-foot">
+        <div class="foot-line"><span>v0.4.0</span><span>WIN64</span></div>
+        <div class="foot-line"><span class="ok"><span class="led"></span>SẴN SÀNG</span><span>VI</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1>Tổng quan</h1>
+        <span class="chip">Đã vá</span>
+        <span class="spacer"></span>
+        <button class="refresh" type="button" title="Làm mới" aria-label="Làm mới">
+          <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>Làm mới
+        </button>
+      </div>
+
+      <div class="content">
+        <section class="panel" aria-labelledby="install-title">
+          <div class="p-head"><span>Bản cài</span><span class="p-meta">sxe · 0.4.0</span></div>
+          <div class="inst-body">
+            <div class="inst-left">
+              <div class="kicker">Gói</div>
+              <div class="app-name" id="install-title">Spotify</div>
+              <div class="big-version">1.2.51</div>
+              <div class="tags"><span class="tag">64-bit</span><span class="tag">Ổn định</span></div>
+            </div>
+            <div class="inst-right">
+              <div class="line">
+                <span class="k">Path</span>
+                <span class="v" title="C:\Users\kkirru\AppData\Roaming\Spotify">C:\Users\kkirru\AppData\Roaming\Spotify</span>
+                <button class="copy" type="button" title="Chép đường dẫn" aria-label="Chép đường dẫn"><svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg></button>
+                <span></span>
+              </div>
+              <div class="line">
+                <span class="k">Sao lưu</span>
+                <span class="v mono">30/10/2026 · 14:22</span>
+                <span class="state ok">OK</span>
+                <span></span>
+              </div>
+              <div class="line">
+                <span class="k">Vá bởi</span>
+                <span class="v">sxe 0.4.0</span>
+                <span class="state">LOCAL</span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="button"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Áp dụng</button>
+          <button class="btn btn-secondary" type="button"><svg class="ico" aria-hidden="true"><use href="#i-restart"/></svg>Khôi phục</button>
+          <button class="btn btn-secondary" type="button"><svg class="ico" aria-hidden="true"><use href="#i-save"/></svg>Sao lưu</button>
+          <button class="btn btn-ghost" type="button"><svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>Khởi động lại</button>
+          <button class="btn btn-ghost" type="button"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>Mở thư mục</button>
+        </div>
+
+        <div class="warn" role="status">
+          <svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>
+          <span class="msg">Spotify đang chạy — thay đổi áp dụng sau khi khởi động lại</span>
+          <button class="link" type="button">Khởi động lại</button>
+        </div>
+
+        <section class="panel mods" aria-label="Module và theme đang bật">
+          <div class="p-head"><span>Module</span><span class="p-meta">3/3 đang bật</span></div>
+          <div class="mrow">
+            <span class="led" aria-hidden="true"></span>
+            <span class="mod-ico"><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg></span>
+            <div><p class="mod-name">Adblock</p><p class="mod-desc">Ẩn quảng cáo và thẻ được tài trợ.</p></div>
+            <span class="ver">v1.0.0</span>
+            <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Tắt Adblock" data-name="Adblock">ON</button>
+          </div>
+          <div class="mrow">
+            <span class="led" aria-hidden="true"></span>
+            <span class="mod-ico"><svg class="ico" aria-hidden="true"><use href="#i-palette"/></svg></span>
+            <div><p class="mod-name">Soft</p><p class="mod-desc">Theme tối, xanh Spotify.</p></div>
+            <span class="ver">v2.1</span>
+            <span class="active-tag"><span class="led"></span>ĐANG DÙNG</span>
+          </div>
+          <div class="mrow">
+            <span class="led" aria-hidden="true"></span>
+            <span class="mod-ico"><svg class="ico" aria-hidden="true"><use href="#i-volume"/></svg></span>
+            <div><p class="mod-name">Volume memory</p><p class="mod-desc">Nhớ mức âm lượng khi mở lại.</p></div>
+            <span class="ver">v1.0.0</span>
+            <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Tắt Volume memory" data-name="Volume memory">ON</button>
+          </div>
+        </section>
+      </div>
+
+      <footer class="statusbar">
+        <span class="ok"><span class="led"></span>SẴN SÀNG</span>
+        <span class="mid">SPOTIFY 1.2.51 · WIN64</span>
+        <span>SAO LƯU OK</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.switch').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-checked') === 'true';
+      btn.setAttribute('aria-checked', String(!on));
+      btn.textContent = on ? 'OFF' : 'ON';
+      btn.setAttribute('aria-label', (on ? 'Bật ' : 'Tắt ') + (btn.getAttribute('data-name') || 'module'));
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="vi" data-app-theme="dark" data-app-accent="green">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Spotify Extension</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-overview" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/>
+      <rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>
+    </symbol>
+    <symbol id="i-modules" viewBox="0 0 24 24">
+      <path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/>
+    </symbol>
+    <symbol id="i-appearance" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.5"/>
+      <circle cx="9.4" cy="9.2" r="1.1" fill="currentColor" stroke="none"/>
+      <circle cx="14.6" cy="9.2" r="1.1" fill="currentColor" stroke="none"/>
+      <circle cx="12" cy="14.4" r="1.1" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24">
+      <path d="M14.7 6.3a4.2 4.2 0 0 0-5.6 5.2L4 16.6V20h3.4l5.1-5.1a4.2 4.2 0 0 0 5.2-5.6l-2.5 2.5-2.4-2.4 2.4-2.6Z"/>
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2.5v2M12 19.5v2M4.5 4.5l1.4 1.4M18.1 18.1l1.4 1.4M2.5 12h2M19.5 12h2M4.5 19.5l1.4-1.4M18.1 5.9l1.4-1.4"/>
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24">
+      <path d="M20 14.5A8.2 8.2 0 0 1 9.5 4 8.2 8.2 0 1 0 20 14.5Z"/>
+    </symbol>
+    <symbol id="i-system" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/>
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <path d="M20 11a8 8 0 0 0-14.1-4.9L4 8"/><path d="M4 4v4h4"/>
+      <path d="M4 13a8 8 0 0 0 14.1 4.9L20 16"/><path d="M20 20v-4h-4"/>
+    </symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24">
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+    </symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+    </symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24">
+      <path d="M12 3v9"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24">
+      <path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6l-8-3Z"/>
+    </symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24">
+      <path d="M4 9h4l5-4v14l-5-4H4V9Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>
+    </symbol>
+    <symbol id="i-skip" viewBox="0 0 24 24">
+      <path d="M5 5v14l9-7-9-7Z"/><path d="M18 5v14"/>
+    </symbol>
+    <symbol id="i-speed" viewBox="0 0 24 24">
+      <path d="M4 17a8.5 8.5 0 1 1 16 0"/><path d="M12 14 16 9"/><circle cx="12" cy="14" r="1.4"/>
+    </symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24">
+      <path d="M12 20s-7-4.3-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.7 12 20 12 20Z"/>
+    </symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24">
+      <path d="M3 3l18 18"/><path d="M10.6 6.3A9.7 9.7 0 0 1 12 6c5 0 9 6 9 6a16 16 0 0 1-2.6 3.3"/>
+      <path d="M6.6 7.4C4.3 9.1 3 12 3 12s4 6 9 6a9 9 0 0 0 4.4-1.2"/><path d="M9.9 10a3 3 0 0 0 4.2 4.2"/>
+    </symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24">
+      <path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>
+    </symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24">
+      <rect x="2.5" y="6" width="19" height="12" rx="2"/>
+      <path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M6 13.5h.01M9.5 13.5h.01M13 13.5h.01M16.5 13.5h.01M7.5 16.5h9"/>
+    </symbol>
+    <symbol id="i-keys" viewBox="0 0 24 24">
+      <rect x="2.5" y="6" width="19" height="12" rx="2"/>
+      <path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M6 13.5h.01M9.5 13.5h.01M13 13.5h.01M16.5 13.5h.01M7.5 16.5h9"/>
+    </symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24">
+      <path d="M12 3a9 9 0 1 0 0 18h1.4a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h4.4A4.6 4.6 0 0 0 21 8.4C21 5.3 17 3 12 3Z"/>
+      <circle cx="7.5" cy="9" r="1.1" fill="currentColor" stroke="none"/>
+      <circle cx="11" cy="6.7" r="1.1" fill="currentColor" stroke="none"/>
+      <circle cx="15.5" cy="7.7" r="1.1" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-code" viewBox="0 0 24 24">
+      <path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>
+    </symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24">
+      <path d="M3 12h2l2.2-5 3.2 10L14 6l2.6 8 1.4-2H21"/>
+    </symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24">
+      <path d="M12 3.5 13.6 9l5.4 1.6-5.4 1.6L12 17.6l-1.6-5.4L5 10.6 10.4 9 12 3.5Z"/>
+      <path d="M18.5 16v4M16.5 18h4"/>
+    </symbol>
+    <symbol id="i-window" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>
+    </symbol>
+    <symbol id="i-update" viewBox="0 0 24 24">
+      <path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="m5 12.5 4.5 4.5L19 7.5"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24">
+      <path d="m6 6 12 12M18 6 6 18"/>
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <path d="M12 4 3 20h18L12 4Z"/><path d="M12 10v4.5"/><path d="M12 17.5h.01"/>
+    </symbol>
+    <symbol id="i-info" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5h.01"/>
+    </symbol>
+    <symbol id="i-empty-box" viewBox="0 0 24 24">
+      <path d="m3.5 8 8.5-4 8.5 4-8.5 4-8.5-4Z"/><path d="M3.5 8v8l8.5 4 8.5-4V8"/><path d="M12 12v8"/>
+    </symbol>
+  </svg>
+
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <rect x="6" y="8" width="3" height="8" rx="1.5"/>
+            <rect x="10.5" y="5" width="3" height="14" rx="1.5"/>
+            <rect x="15" y="7" width="3" height="10" rx="1.5"/>
+          </svg>
+        </span>
+        <span class="brand-name" data-i18n="app.name">Spotify Extension</span>
+      </div>
+
+      <nav class="nav" id="nav" aria-label="Primary">
+        <a class="nav-item" href="#/overview" data-route="overview">
+          <svg class="ico" aria-hidden="true"><use href="#i-overview"></use></svg>
+          <span data-i18n="nav.overview"></span>
+        </a>
+        <a class="nav-item" href="#/modules" data-route="modules">
+          <svg class="ico" aria-hidden="true"><use href="#i-modules"></use></svg>
+          <span data-i18n="nav.modules"></span>
+        </a>
+        <a class="nav-item" href="#/appearance" data-route="appearance">
+          <svg class="ico" aria-hidden="true"><use href="#i-appearance"></use></svg>
+          <span data-i18n="nav.appearance"></span>
+        </a>
+        <a class="nav-item" href="#/tools" data-route="tools">
+          <svg class="ico" aria-hidden="true"><use href="#i-tools"></use></svg>
+          <span data-i18n="nav.tools"></span>
+        </a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <button class="btn btn-ghost btn-icon" id="theme-toggle" type="button">
+          <svg class="ico" aria-hidden="true"><use id="theme-toggle-icon" href="#i-sun"></use></svg>
+        </button>
+        <span class="app-version" id="app-version">v0.0.0</span>
+      </div>
+    </aside>
+
+    <div class="main" id="main">
+      <header class="topbar">
+        <h1 class="page-title" id="page-title"></h1>
+        <div class="topbar-actions" id="topbar-actions"></div>
+      </header>
+      <div class="page" id="page" tabindex="-1"></div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <div class="preview-bar" id="preview-bar" hidden>
+    <span class="preview-dot" aria-hidden="true"></span>
+    <span data-i18n="preview.label"></span>
+  </div>
+
+  <div id="popover-root"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

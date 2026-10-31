@@ -1,68 +1,66 @@
 # Spotify Extension
 
-Bản Việt hoá + tuỳ biến cho Spotify Desktop trên Windows: đổi màu, cài theme, thêm extension — CLI nhẹ kiểu Spicetify, chỉ **~12 MB**.
+Ứng dụng Windows quản lý phần tuỳ biến của **Spotify Desktop**: đổi giao diện, bật/tắt tiện ích, chỉnh màu, sao lưu và khôi phục client. Phần chạy bên trong Spotify là một payload TypeScript; phần quản lý là app desktop **Rust + Tauri 2** (~5 MB, dùng WebView2 có sẵn của Windows).
 
-> Chỉ hỗ trợ **Windows 10/11 64-bit** và **Spotify Desktop bản cài từ trang chủ Spotify** (Microsoft Store chưa được hỗ trợ).
+> Windows 10/11 64-bit · Spotify Desktop bản cài từ [spotify.com](https://www.spotify.com/download/windows/) · bản Microsoft Store chưa hỗ trợ.
+
+![Tổng quan](docs/screenshots/overview.png)
+![Giao diện sáng](docs/screenshots/overview-light.png)
 
 ## Tính năng
 
 | Nhóm | Nội dung |
 | --- | --- |
-| Cài đặt | Tự tìm bản Spotify đang cài, sao lưu trước khi sửa, cài / gỡ chỉ với một lệnh |
-| Giao diện | 6 màu chỉnh trực tiếp trong `config.ini` (accent, nền, sidebar, card, chữ, chữ mờ) + CSS tuỳ ý |
-| Theme | Chọn theme dựng sẵn hoặc tự thả file vào thư mục theme |
-| Extension | Bật/tắt từng extension bằng lệnh `sxe config` |
-| Kho tiện ích | `sxe store list / install / uninstall / update` — module đi kèm + kho online trên GitHub |
-| Trong Spotify | Bảng điều khiển (góc phải dưới): copy link/URI bài, mở bài, đổi màu nhấn, lời bài hát đồng bộ, tua ±10s, popup tên bài, đếm ngược thời gian |
-| Chẩn đoán | Safe mode bỏ qua mọi extension/tinh chỉnh; bảng kiểm tra webpack hook, selector, extension lỗi và chép báo cáo gửi lỗi |
-| Cập nhật | `sxe update --yes` tự tải bản mới từ GitHub Releases; bản mới của extension hiện ngay trong Spotify |
-| An toàn | Mọi thay đổi nằm trong `Apps/xpui/sxe/`, `sxe restore` là về nguyên bản |
+| Bảng điều khiển trong Spotify | Nút nổi góc phải dưới: thông tin bài đang phát, chép link/URI, đổi màu nhấn, lời bài hát đồng bộ từ LRCLIB, tua ±10 giây, popup tên bài, đếm ngược thời gian, chẩn đoán |
+| Theme | 9 theme dựng sẵn + tự thả theme vào thư mục dữ liệu |
+| Tiện ích | 11 extension: adblock, auto skip explicit, quick keys, track copy, volume memory/wheel, playback speed, like hotkey, hide sidebar, focus mode, skip short tracks |
+| Màu | 6 màu giao diện (nhấn, nền, sidebar, card, chữ, chữ mờ) + CSS tuỳ ý |
+| An toàn | Sao lưu theo **từng phiên bản Spotify**, payload ghi qua thư mục tạm rồi đổi chỗ, `Khôi phục` trả client về nguyên bản |
+| Song ngữ | Việt / Anh, đổi ngay trong app |
 
 ## Cài đặt
 
-1. Vào tab **Releases** của repo, tải `spotify-extension-windows-x64.zip`.
-2. Giải nén vào một thư mục cố định (vd `C:\Tools\sxe`).
-3. Mở **Command Prompt** trong thư mục đó rồi chạy:
+1. Tải `spotify-extension-windows-x64.zip` ở tab **Releases** (hoặc trong artifact của GitHub Actions khi chưa phát hành).
+2. Giải nén vào một thư mục cố định, ví dụ `C:\Tools\Spotify Extension`.
+3. Chạy `spotify-extension.exe`.
+4. Nếu Windows hiện *"Windows protected your PC"*: **More info → Run anyway**. App chưa ký số nên SmartScreen cảnh báo; mã SHA-256 của bản tải nằm trong file `.sha256` cùng release — đối chiếu bằng `certutil -hashfile spotify-extension-windows-x64.zip SHA256`.
+
+Cấu trúc thư mục sau khi giải nén:
 
 ```
-sxe status
-sxe backup
-sxe apply
+spotify-extension.exe
+runtime\runtime.js      ← payload tiêm vào Spotify
+extensions\             ← 11 tiện ích
+themes\                 ← 9 theme
+snippets\               ← đoạn CSS
 ```
 
-4. Khởi động lại Spotify để thấy thay đổi.
+## Bốn trang trong app
 
-Gỡ hoàn toàn: `sxe restore` — Spotify trở về nguyên bản.
-
-## Lệnh
-
-| Lệnh | Việc |
+| Trang | Việc |
 | --- | --- |
-| `sxe status` | Liệt kê bản Spotify tìm thấy và trạng thái |
-| `sxe backup` | Chụp `Apps\xpui` nguyên bản theo từng phiên bản Spotify vào `%APPDATA%\spotify-extension\backups\` |
-| `sxe apply` | Ghi payload + extension + màu vào `Apps\xpui\sxe\`, chèn khối vào `index.html` (tự backup nếu chưa có) |
-| `sxe restore` | Khôi phục client từ bản sao lưu của đúng phiên bản Spotify đang chạy và dọn sạch thư mục `sxe\` |
-| `sxe uninstall` | Giống restore, kèm dọn file thừa khi không có backup |
-| `sxe config` | In cấu hình hiện tại |
-| `sxe config <khoá> <giá>` | Sửa một mục (xem dưới) |
-| `sxe theme list` / `sxe theme set <tên>` | Liệt kê / chọn theme |
-| `sxe ext list` / `sxe ext on\|off <id>` | Liệt kê / bật / tắt extension |
-| `sxe doctor` | In báo cáo chẩn đoán (client, backup, runtime, mạng…) |
-| `sxe restart` | Khởi động lại Spotify |
-| `sxe store list [all]` | Liệt kê module (thêm `all` để gộp kho online) |
-| `sxe store install <id>` | Cài module rồi ghi vào config |
-| `sxe store uninstall <id>` | Gỡ module |
-| `sxe store update <id>` | Cập nhật module lên bản mới nhất |
-| `sxe update` / `sxe update --yes` | Kiểm tra / cài bản mới của chính CLI |
-| `sxe version` | In phiên bản |
+| **Tổng quan** | Chọn bản Spotify, xem phiên bản/kiến trúc/trạng thái vá/thông tin sao lưu, và chạy Apply · Khôi phục · Sao lưu · Khởi động lại · Mở thư mục |
+| **Module** | Bật/tắt tiện ích, chọn theme, bật snippet; tìm kiếm theo tên |
+| **Giao diện** | Chọn theme cho Spotify và chỉnh 6 màu, có ô xem trước |
+| **Công cụ** | Ngôn ngữ, Safe mode, kiểm tra cập nhật, đường dẫn Spotify, bảng chẩn đoán |
 
-Cờ chung: `--path <thư mục>` chọn bản Spotify tường minh, `--replace` vá đè lên client đang bị Spicetify vá (tự chạy `spicetify restore` hoặc khôi phục từ thư mục backup của Spicetify trước).
+Thao tác làm thay đổi client đều ghi ngay vào `Apps\xpui`; **khởi động lại Spotify** để thấy kết quả (nút *Khởi động lại* trong app làm việc này).
 
-Sau khi đổi config hay cài module, chạy `sxe apply` để đẩy vào Spotify.
+## Cách hoạt động
+
+1. **Sao lưu** — trước lần vá đầu tiên của mỗi phiên bản Spotify, app chép nguyên `Apps\xpui` vào
+   `%APPDATA%\spotify-extension\backups\<id>\<phiên-bản>\xpui\` kèm `manifest.json`.
+   Bản sao luôn sạch: bỏ thư mục `sxe` và khối marker, nên khôi phục ra đúng bản gốc.
+2. **Áp dụng** — ghi `runtime.js`, màu, `user.css`, các extension đang bật và `manifest.js` vào
+   `Apps\xpui\sxe\`; thư mục mới được dựng cạnh đó rồi đổi chỗ, nên lỗi giữa chừng không làm hỏng bản đang chạy.
+   Sau đó chèn một khối nhỏ vào `index.html` giữa hai mốc `<!-- sxe:start -->` và `<!-- sxe:end -->`.
+3. **Khôi phục** — chép lại snapshot của đúng phiên bản Spotify đang chạy, rồi xoá thư mục `sxe`.
+   Nhờ vậy client không còn ở trạng thái "vá dở".
+4. **Trong Spotify** — payload đọc manifest, dựng bảng điều khiển bằng Shadow DOM và nạp các extension đã bật.
 
 ## Cấu hình
 
-File `%APPDATA%\spotify-extension\config.ini`:
+File `%APPDATA%\spotify-extension\config.ini`, app tự tạo khi lưu thay đổi:
 
 ```ini
 [Setting]
@@ -93,107 +91,57 @@ safe_mode = 0
 | `snippets` | Đoạn CSS bật, ngăn cách bằng `\|` |
 | `theme` | Tên theme (`Soft`, hoặc theme tải từ kho) |
 | `colors.*` | 6 màu giao diện |
-| `language` | `vi` hoặc `en` — áp cho bảng điều khiển trong Spotify và CLI |
-| `safe_mode` | `1` = bỏ qua extension/tinh chỉnh khi apply (để chẩn đoán) |
-| `spotify_path` | Khoá thư mục Spotify cố định khi có nhiều bản |
-| `check_update` | `0` = tắt kiểm tra bản mới trong Spotify. Đây là **mặc định**; nếu cậu bật/tắt trong bảng điều khiển thì lựa chọn đó được giữ lại |
+| `language` | `vi` hoặc `en` |
+| `safe_mode` | `1` = bỏ qua extension/tinh chỉnh khi áp dụng (để chẩn đoán) |
+| `spotify_path` | Khoá thư mục Spotify khi máy có nhiều bản |
+| `check_update` | `0` = tắt kiểm tra bản mới trong Spotify (bảng điều khiển vẫn đổi được) |
 
-CSS tuỳ ý: bỏ vào `%APPDATA%\spotify-extension\user.css`, nó được nối vào sau cùng.
+CSS tuỳ ý: bỏ vào `%APPDATA%\spotify-extension\user.css`, nội dung được nối vào sau cùng.
 
-Lần chạy đầu tiên, nếu máy còn `settings.json` của bản app cũ, CLI tự nhập màu, theme và danh sách extension sang `config.ini`.
+## Gỡ hoàn toàn
 
-## Kho tiện ích
+Bấm **Khôi phục** trong app (trả client về bản gốc và xoá `Apps\xpui\sxe`), rồi xoá thư mục cài đặt.
+Dữ liệu người dùng nằm ở `%APPDATA%\spotify-extension` — xoá thư mục này là sạch hết cấu hình và bản sao lưu.
 
-Module đi kèm trong zip:
+## Quyền riêng tư
 
-| Module | Loại | Việc |
-| --- | --- | --- |
-| Adblock | extension | Ẩn quảng cáo và thẻ được tài trợ |
-| Auto skip explicit | extension | Tự nhảy bài có nhãn explicit (Alt+E bật/tắt) |
-| Skip short tracks | extension | Tự nhảy bài ngắn hơn 45 giây (Alt+K bật/tắt) |
-| Volume memory | extension | Nhớ mức âm lượng, khôi phục khi mở Spotify |
-| Volume wheel | extension | Lăn chuột trên thanh phát để đổi âm lượng 5% |
-| Playback speed | extension | Đổi tốc độ phát 1x → 1.25x → 1.5x → 2x (Alt+1) |
-| Like hotkey | extension | Bấm nút thích bài đang phát (Alt+L) |
-| Hide sidebar | extension | Ẩn thanh bên trái (Alt+B) |
-| Focus mode | extension | Làm mờ giao diện, nổi bật thanh phát (Alt+F) |
-| Quick keys | extension | Alt+←/→ tua 10 giây, Alt+↑/↓ âm lượng, Alt+M tắt tiếng |
-| Track copy | extension | Alt+C chép tên bài hiện tại |
-| Soft, Nord, Dracula, Amoled, Catppuccin, Gruvbox, TokyoNight, Rosé Pine, Solarized | theme | 9 theme màu sẵn, đổi bằng `sxe theme set <tên>` |
-| Hide window controls | snippet | Ẩn nút cửa sổ Windows của Spotify |
+- Khi mở mục lời bài hát, tên bài, nghệ sĩ, album và thời lượng được gửi tới `lrclib.net` để tìm lời.
+- App kiểm tra bản mới bằng GitHub API; bản cập nhật chỉ tải từ tài khoản `github.com/ninokiru`.
+- Báo cáo chẩn đoán chỉ được chép vào clipboard khi người dùng bấm nút — không tự gửi đi đâu.
+- Không có telemetry, không đọc tài khoản Spotify.
 
-Kho online lấy từ `store/modules.json` trong repo — module mới (như theme **Night**, snippet **Rounded covers**) tải thẳng về `%APPDATA%\spotify-extension\`. Thêm module vào `store/modules.json` là nó xuất hiện với tất cả người dùng, không cần ra bản mới.
+## Phát triển
 
-Cấu trúc một mục trong kho:
-
-```json
-{
-  "id": "adblock",
-  "name": "Adblock",
-  "author": "ninokiru",
-  "description": "Removes ad slots and sponsored cards in the Spotify client.",
-  "descriptionVi": "Ẩn quảng cáo và thẻ được tài trợ trong giao diện Spotify.",
-  "version": "1.0.0",
-  "kind": "extension",
-  "glyph": "shield",
-  "accent": ["#123a24", "#0d1f16"],
-  "files": [{ "name": "adblock.js", "url": "https://raw.githubusercontent.com/…/adblock.js" }]
-}
+```
+src-tauri/     Rust + Tauri 2 (app quản lý)
+ui/            HTML/CSS/JS thuần, được nhúng vào exe
+src/payload/   TypeScript chạy trong Spotify (esbuild → dist/payload/runtime.js)
+extensions/    tiện ích .js
+themes/        theme .css
+snippets/      đoạn CSS rời
+docs/          design spec, audit Tauri, ý tưởng mở rộng, mockup
 ```
 
-`kind` là `extension` (file `.js`), `theme` (CSS trong thư mục riêng) hoặc `snippet` (CSS nối vào `user.css`).
+- Build payload: `npm install && npm run build` (typecheck + esbuild).
+- Build app: `cargo build --release --features tauri/custom-protocol --manifest-path src-tauri/Cargo.toml`.
+- Test: `cargo test --manifest-path src-tauri/Cargo.toml`.
+- CI (`.github/workflows/build.yml`) làm toàn bộ trên `windows-latest`; tag `v*` thì `release.yml` phát hành zip kèm `.sha256`.
 
-## Bảng điều khiển trong Spotify
+Xem `docs/design-spec.md` (thiết kế giao diện), `docs/tauri-notes.md` (audit Tauri), `docs/extension-ideas.md` (ý tưởng mở rộng), `docs/ui-directions.md` (các hướng giao diện).
 
-Bấm nút xanh có biểu tượng cân bằng ở góc phải dưới Spotify để mở:
+## Giấy phép
 
-- **Đang phát**: chép link `open.spotify.com`, chép URI, hoặc mở bài hát bằng trình duyệt.
-- **Màu nhấn**: 6 màu có sẵn, đổi ngay không cần khởi động lại.
-- **Tính năng**: bật/tắt nút tua ±10 giây, popup tên bài, đếm ngược thời gian.
-- **Lời bài hát**: lấy từ LRCLIB (miễn phí, không cần API key), tự cuộn và tô sáng câu đang hát. Chỉ tải khi bảng điều khiển mở.
-- **Cập nhật**: kiểm tra bản mới của extension.
-- **Chẩn đoán**: webpack hook, số module, nút điều khiển, ô thời lượng, extension lỗi, bộ nhớ tạm — kèm nút chép toàn bộ thành báo cáo để gửi lỗi.
-
-### Quyền riêng tư
-
-Khi mở mục lời bài hát, tên bài, nghệ sĩ, album và thời lượng được gửi tới `lrclib.net` để tìm lời. Không có dữ liệu nào khác rời khỏi máy. Báo cáo chẩn đoán chỉ được chép vào clipboard khi cậu bấm nút — công cụ không tự gửi đi đâu cả.
-
-### Safe mode
-
-Bật `safe_mode = 1` trong config rồi chạy `sxe apply`. Lần mở Spotify tiếp theo sẽ bỏ qua extension, tinh chỉnh và màu nhấn, chỉ giữ bảng điều khiển — dùng khi Spotify lỗi sau khi cài để tìm thủ phạm. Tắt đi rồi `sxe apply` lại để khôi phục.
-
-## Cách hoạt động
-
-1. `sxe backup` chép nguyên vẹn `Apps\xpui` vào `%APPDATA%\spotify-extension\backups\<id>\<phiên-bản>\xpui\` kèm `manifest.json`. Mỗi phiên bản Spotify một bản sao riêng, nên khi Spotify tự cập nhật thì bản cũ vẫn còn nguyên và `sxe restore` luôn chọn đúng bản của phiên bản đang chạy.
-2. `sxe apply` ghi `runtime.js`, `colors.css`, `user.css`, `manifest.js` và các extension đang bật vào `Apps\xpui\sxe\`, rồi chèn một khối nhỏ vào `index.html` giữa hai mốc `<!-- sxe:start -->` và `<!-- sxe:end -->`. Payload được ghi ra thư mục tạm rồi mới đổi chỗ, nên lỗi giữa chừng không làm hỏng bản đang chạy.
-3. Nhờ hai mốc này, apply lại nhiều lần không bị nhân đôi, restore không đụng vào phần khác.
-4. Nút tua ±10 giây được gắn lại bằng `MutationObserver` mỗi khi Spotify render lại thanh điều khiển, không còn vòng lặp kiểm tra 1,5 giây.
-
-## Tự cập nhật
-
-- **CLI**: `sxe update` so tag mới nhất trên GitHub Releases với phiên bản đang chạy theo chuẩn semver (bản local mới hơn thì không hạ cấp); `sxe update --yes` tải zip mới, thay `sxe.exe` và toàn bộ thư mục tài nguyên. Nếu ghi exe mới lỗi, bản cũ được trả lại để CLI vẫn chạy được.
-- **Trong Spotify**: runtime đọc `tag_name` của release mới nhất qua GitHub API. Khi có bản mới, một banner nhỏ hiện ở góc phải dưới; bấm vào để mở trang tải. Có thể tắt kiểm tra trong bảng điều khiển.
-- Việc kiểm tra chạy 6 giờ một lần (có cache), lỗi mạng chỉ ẩn banner chứ không ảnh hưởng Spotify.
-
-## Build từ nguồn
-
-CI (GitHub Actions) làm mọi thứ:
-
-1. `npm run build` — typecheck + đóng gói payload (`dist/payload/runtime.js`).
-2. `go vet ./... && go test ./...` — kiểm tra Go.
-3. `go build` — ra `sxe.exe` (~12 MB, không dependency ngoài).
-4. Đóng zip: `sxe.exe` + `runtime/` + `extensions/` + `themes/` + `snippets/`.
-
-Push tag `v*` (vd `v0.3.0`) là workflow `release` tự tạo GitHub Release kèm zip.
+MIT.
 
 ---
 
 ## English
 
-A Spicetify-style command-line tool for Spotify Desktop on Windows 10/11 x64, ~12 MB:
+A Windows desktop app that manages Spotify customisation: themes, extensions, colours, backups and client restore. The manager is built with **Rust + Tauri 2**; the part that runs inside Spotify is a TypeScript payload.
 
-- `sxe status` lists installs; `sxe backup` snapshots `Apps/xpui`; `sxe apply` patches; `sxe restore` rolls back.
-- Six theme colours, custom CSS, themes, extensions and CSS snippets via `config.ini` in `%APPDATA%\spotify-extension\`.
-- `sxe store install <id>` pulls modules from the catalogue in `store/modules.json`.
-- Inside Spotify: a panel (bottom-right) copies track links/URIs, opens the track, switches accent colours, shows synced lyrics from LRCLIB, toggles ±10s seek buttons, the track toast and time remaining, and holds a diagnostics report.
-- `sxe update --yes` self-updates from GitHub Releases. Only download from `github.com/ninokiru/Spotify-Extension`.
+- Download the zip from Releases, extract, run `spotify-extension.exe`. Unsigned build — SmartScreen will ask for confirmation.
+- Four pages: **Overview** (install state, apply/restore/backup/restart), **Modules** (toggle extensions, pick a theme), **Appearance** (theme and six colours), **Tools** (language, safe mode, update check, diagnostics).
+- Backups are kept per Spotify version under `%APPDATA%\spotify-extension\backups\<id>\<version>\`; the copy is pristine, so restore always returns a clean client.
+- The payload is written to `Apps\xpui\sxe\` and `index.html` gets a small marker block, so repeated applies never duplicate and restore never touches anything else.
+- Privacy: lyrics lookups go to `lrclib.net`; the update check uses the GitHub API; nothing else leaves the machine.
+- MIT licensed.

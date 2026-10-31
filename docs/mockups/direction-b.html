@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Hướng B — Linear minimal · Spotify Extension</title>
+<style>
+  :root{
+    --bg:#0c0d0f; --side:#090a0c; --surface:#121316; --surface-2:#181a1e; --surface-3:#1f2126;
+    --line:#23252a; --line-strong:#33363d;
+    --text:#e9eaee; --dim:#9a9da6; --faint:#7f828a;
+    --accent:#a78bfa; --accent-hover:#b7a0ff; --accent-soft:#211c31; --accent-ink:#120d22;
+    --warn:#d9b36b; --warn-soft:#211c12; --warn-line:#4a3b1f;
+    --danger:#e5727a;
+    --r-xs:4px; --r-sm:6px; --r-md:8px; --r-lg:10px;
+    --font:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+    --mono:"Cascadia Mono",Consolas,monospace;
+    --dur:150ms; --ease:cubic-bezier(.2,0,0,1);
+    --tb:#0a0b0d; --tb-border:#1c1e22; --shadow:none;
+  }
+  [data-theme="light"]{
+    --bg:#f6f6f7; --side:#f1f1f3; --surface:#ffffff; --surface-2:#f0f1f3; --surface-3:#e8e9ec;
+    --line:#e4e5e9; --line-strong:#d1d3d9;
+    --text:#17181b; --dim:#5b5e66; --faint:#686b73;
+    --accent:#6b4bd6; --accent-hover:#5c3ec2; --accent-soft:#efeafc; --accent-ink:#ffffff;
+    --warn:#8a6414; --warn-soft:#faf2df; --warn-line:#e6d3a8;
+    --danger:#b3404a;
+    --tb:#efeff1; --tb-border:#dedfe4;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{width:1000px;height:700px;margin:0;padding:0;overflow:hidden}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-feature-settings:"ss01" 1,"cv11" 1;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  button{font:inherit;color:inherit}
+  .window{width:1000px;height:700px;display:grid;grid-template-rows:40px 1fr;overflow:hidden;background:var(--bg);box-shadow:inset 0 0 0 1px var(--line)}
+  .sprite{position:absolute;width:0;height:0;overflow:hidden}
+  .ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* chrome */
+  .titlebar{display:flex;align-items:center;gap:8px;padding:0 12px 0 14px;background:var(--tb);border-bottom:1px solid var(--tb-border);user-select:none;transition:background-color var(--dur) var(--ease)}
+  .tb-dot{width:12px;height:12px;border-radius:4px;border:1px solid var(--line-strong);position:relative;flex:none}
+  .tb-dot::after{content:"";position:absolute;inset:3px;border-radius:2px;background:var(--accent)}
+  .tb-title{font-size:11px;font-weight:500;color:var(--dim);letter-spacing:.01em}
+  .tb-spacer{flex:1}
+  .tb-ver{font:400 10px/1 var(--mono);color:var(--faint);letter-spacing:.02em;margin-right:6px}
+  .win-controls{display:flex;align-items:center;gap:10px;padding-right:2px}
+  .wbtn{width:13px;height:13px;border-radius:50%;border:1px solid var(--line-strong);display:grid;place-items:center;color:var(--dim);transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .wbtn svg{width:7px;height:7px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round}
+  .wbtn:hover{background:var(--surface-2);border-color:var(--faint);color:var(--text)}
+  .wbtn.close:hover{background:#d64545;border-color:#d64545;color:#fff}
+
+  /* shell */
+  .app{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0}
+  .sidebar{display:flex;flex-direction:column;min-height:0;padding:0 12px;background:var(--side);border-right:1px solid var(--line);transition:background-color var(--dur) var(--ease)}
+  .brand{height:56px;display:flex;align-items:center;gap:9px;padding:0 8px}
+  .brand-mark{width:22px;height:22px;flex:none;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface)}
+  .brand-mark svg{width:14px;height:14px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round}
+  .brand-name{font-size:13px;font-weight:500;letter-spacing:-.01em}
+  .side-label{margin:14px 0 6px;padding:0 9px;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+  .nav{display:flex;flex-direction:column;gap:1px}
+  .nav-item{position:relative;display:flex;align-items:center;gap:9px;height:30px;padding:0 9px;border:1px solid transparent;border-radius:var(--r-sm);color:var(--dim);text-decoration:none;font-size:13px;font-weight:450;transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .nav-item .ico{width:18px;height:18px;color:var(--faint);transition:color var(--dur) var(--ease)}
+  .nav-item:hover{background:var(--surface-2);color:var(--text)}
+  .nav-item:hover .ico{color:var(--dim)}
+  .nav-item[aria-current="page"]{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+  .nav-item[aria-current="page"] .ico{color:var(--accent)}
+  .nav-item[aria-current="page"]::before{content:"";position:absolute;left:-1px;top:8px;width:2px;height:12px;border-radius:2px;background:var(--accent)}
+  .nav-item:focus-visible{outline-offset:-2px}
+  .side-foot{margin-top:auto;padding:12px 8px 13px;border-top:1px solid var(--line)}
+  .theme-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;font-size:10.5px;color:var(--dim)}
+  .seg{display:inline-flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
+  .seg button{width:24px;height:20px;display:grid;place-items:center;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--faint);cursor:pointer;transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .seg button .ico{width:12px;height:12px}
+  .seg button:hover{color:var(--text)}
+  .seg button[aria-pressed="true"]{background:var(--surface);border-color:var(--line-strong);color:var(--text)}
+  .seg button:focus-visible{outline-offset:1px}
+  .side-meta{display:flex;align-items:center;justify-content:space-between;font:400 10px/1.4 var(--mono);color:var(--faint);letter-spacing:.02em}
+
+  /* main */
+  .main{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--bg);transition:background-color var(--dur) var(--ease)}
+  .topbar{height:56px;flex:none;display:flex;align-items:center;gap:10px;padding:0 24px;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:18px;font-weight:600;line-height:1.2;letter-spacing:-.015em}
+  .chip{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 7px;border:1px solid var(--line-strong);border-radius:var(--r-xs);background:transparent;color:var(--text);font-size:10.5px;font-weight:500;line-height:1;white-space:nowrap}
+  .chip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent)}
+  .spacer{flex:1}
+  .icon-btn{width:28px;height:28px;display:grid;place-items:center;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;color:var(--dim);cursor:pointer;transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .icon-btn:hover{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+  .icon-btn .ico{width:16px;height:16px}
+
+  .content{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:20px 24px 22px;overflow:hidden}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg)}
+  .install{padding:16px}
+  .inst-head{display:flex;align-items:flex-start;gap:12px;min-width:0}
+  .app-ico{width:34px;height:34px;flex:none;display:grid;place-items:center;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);color:var(--dim)}
+  .app-ico .ico{width:18px;height:18px}
+  .inst-id{min-width:0;flex:1}
+  .inst-title{display:flex;align-items:center;gap:8px;margin-top:-2px}
+  .inst-title h2{margin:0;font-size:15px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+  .path{display:flex;align-items:center;gap:3px;margin-top:4px;min-width:0;color:var(--dim)}
+  .path .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 11px/1.4 var(--mono);letter-spacing:-.01em}
+  .copy{width:22px;height:22px;flex:none;display:grid;place-items:center;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--faint);cursor:pointer;transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .copy .ico{width:12px;height:12px}
+  .copy:hover{background:var(--surface-2);border-color:var(--line);color:var(--text)}
+  .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+  .meta dt{margin:0;font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+  .meta dd{margin:5px 0 0;font-size:12px;font-weight:450;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta dd.mono{font:400 11px/1.4 var(--mono);color:var(--dim)}
+
+  .actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 10px;border:1px solid transparent;border-radius:var(--r-sm);font-size:12px;font-weight:500;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+  .btn .ico{width:16px;height:16px}
+  .btn-primary{background:var(--accent);color:var(--accent-ink)}
+  .btn-primary:hover{background:var(--accent-hover)}
+  .btn-secondary{background:var(--surface-2);border-color:var(--line-strong);color:var(--text)}
+  .btn-secondary:hover{background:var(--surface-3);border-color:var(--faint)}
+  .btn-ghost{background:transparent;color:var(--dim)}
+  .btn-ghost:hover{background:var(--surface-2);color:var(--text)}
+
+  .warn{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 10px;border:1px solid var(--warn-line);border-radius:var(--r-sm);background:var(--warn-soft);color:var(--warn);font-size:11.5px;line-height:1.35}
+  .warn .ico{width:14px;height:14px}
+  .warn .msg{min-width:0}
+  .warn .link{margin-left:auto;flex:none;height:24px;padding:0 7px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--warn);font-size:11px;font-weight:500;cursor:pointer;transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .warn .link:hover{border-color:var(--warn-line);background:var(--surface)}
+  .warn .link:focus-visible{outline-offset:1px}
+
+  .sec-head{display:flex;align-items:center;gap:7px;margin-top:2px}
+  .sec-head h2{margin:0;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+  .sec-head .count{display:inline-grid;place-items:center;min-width:15px;height:15px;padding:0 4px;border:1px solid var(--line);border-radius:4px;font:400 9px/1 var(--mono);color:var(--faint)}
+  .mod-list{display:flex;flex-direction:column;overflow:hidden}
+  .mod-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto auto;align-items:center;gap:12px;min-height:58px;padding:8px 14px;border-top:1px solid var(--line);transition:background-color var(--dur) var(--ease)}
+  .mod-row:first-child{border-top:0}
+  .mod-row:hover{background:var(--surface-2)}
+  .mod-ico{display:grid;place-items:center;color:var(--faint)}
+  .mod-ico .ico{width:18px;height:18px}
+  .mod-name{margin:0;font-size:13px;font-weight:500;line-height:1.3}
+  .mod-desc{margin:2px 0 0;font-size:11.5px;line-height:1.35;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ver{font:400 10px/1 var(--mono);color:var(--faint);letter-spacing:.02em}
+  .mini-chip{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border:1px solid var(--accent);border-radius:4px;background:var(--accent-soft);color:var(--accent);font:500 10px/1 var(--font)}
+  .switch{position:relative;width:28px;height:16px;flex:none;padding:0;border:1px solid var(--line-strong);border-radius:var(--r-xs);background:var(--surface-3);cursor:pointer;transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .switch::before{content:"";position:absolute;inset:-7px -6px}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:2px;background:var(--dim);transition:transform var(--dur) var(--ease),background-color var(--dur) var(--ease)}
+  .switch:hover{border-color:var(--faint)}
+  .switch[aria-checked="true"]{background:var(--accent-soft);border-color:var(--accent)}
+  .switch[aria-checked="true"]::after{transform:translateX(12px);background:var(--accent)}
+  .switch:focus-visible{outline-offset:3px}
+
+  .main-foot{flex:none;height:28px;display:flex;align-items:center;gap:7px;padding:0 24px;border-top:1px solid var(--line);background:var(--side);font-size:10px;color:var(--faint)}
+  .main-foot .dot{width:5px;height:5px;flex:none;border-radius:50%;background:var(--accent)}
+  .main-foot .sep{opacity:.6}
+  .main-foot .grow{flex:1}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{transition-duration:.01ms !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h4a5 5 0 0 0 5-5c0-3.3-4-5-9-5Z"/><circle cx="7.5" cy="10" r=".8"/><circle cx="10" cy="6.8" r=".8"/><circle cx="14.5" cy="6.8" r=".8"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 0 0-5 5L4 17l3 3 5.5-5.5a4 4 0 0 0 5-5L14 13l-2.5-2.5 3-4Z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 6.3"/><path d="M20 4v7h-7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+  <symbol id="i-disc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4V9Z"/><path d="M17 9.5a4 4 0 0 1 0 5"/><path d="M19.5 7a8 8 0 0 1 0 10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4Z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5V3Z"/><path d="M8 3v6h8V3"/><path d="M8 21v-7h8v7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></symbol>
+</svg>
+
+<div class="window">
+  <header class="titlebar">
+    <span class="tb-dot" aria-hidden="true"></span>
+    <span class="tb-title">Spotify Extension</span>
+    <span class="tb-spacer"></span>
+    <span class="tb-ver">v0.4.0</span>
+    <div class="win-controls" aria-hidden="true">
+      <span class="wbtn"><svg viewBox="0 0 10 10"><path d="M2.5 5h5"/></svg></span>
+      <span class="wbtn"><svg viewBox="0 0 10 10"><rect x="2.5" y="2.5" width="5" height="5"/></svg></span>
+      <span class="wbtn close"><svg viewBox="0 0 10 10"><path d="m2.8 2.8 4.4 4.4M7.2 2.8 2.8 7.2"/></svg></span>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 14 14"><path d="M4 11V6M7 11V3M10 11V8"/></svg>
+        </span>
+        <span class="brand-name">Spotify Extension</span>
+      </div>
+
+      <nav aria-label="Điều hướng chính">
+        <div class="side-label">Quản lý</div>
+        <div class="nav">
+          <a class="nav-item" href="#/overview" aria-current="page">
+            <svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg><span>Tổng quan</span>
+          </a>
+          <a class="nav-item" href="#/modules">
+            <svg class="ico" aria-hidden="true"><use href="#i-layers"/></svg><span>Module</span>
+          </a>
+          <a class="nav-item" href="#/appearance">
+            <svg class="ico" aria-hidden="true"><use href="#i-palette"/></svg><span>Giao diện</span>
+          </a>
+        </div>
+        <div class="side-label">Hệ thống</div>
+        <div class="nav">
+          <a class="nav-item" href="#/tools">
+            <svg class="ico" aria-hidden="true"><use href="#i-wrench"/></svg><span>Công cụ</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="side-foot">
+        <div class="theme-row">
+          <span>Giao diện</span>
+          <div class="seg" role="group" aria-label="Chọn giao diện sáng hoặc tối">
+            <button type="button" data-set-theme="dark" aria-pressed="true" aria-label="Giao diện tối" title="Giao diện tối">
+              <svg class="ico" aria-hidden="true"><use href="#i-moon"/></svg>
+            </button>
+            <button type="button" data-set-theme="light" aria-pressed="false" aria-label="Giao diện sáng" title="Giao diện sáng">
+              <svg class="ico" aria-hidden="true"><use href="#i-sun"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="side-meta"><span>v0.4.0</span><span>Tiếng Việt</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1>Tổng quan</h1>
+        <span class="chip">Đã vá</span>
+        <span class="spacer"></span>
+        <button class="icon-btn" type="button" title="Làm mới" aria-label="Làm mới">
+          <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+        </button>
+      </div>
+
+      <div class="content">
+        <section class="panel install" aria-labelledby="install-title">
+          <div class="inst-head">
+            <span class="app-ico" aria-hidden="true"><svg class="ico"><use href="#i-disc"/></svg></span>
+            <div class="inst-id">
+              <div class="inst-title"><h2 id="install-title">Spotify</h2></div>
+              <div class="path">
+                <span class="txt" title="C:\Users\kkirru\AppData\Roaming\Spotify">C:\Users\kkirru\AppData\Roaming\Spotify</span>
+                <button class="copy" type="button" title="Chép đường dẫn" aria-label="Chép đường dẫn">
+                  <svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <dl class="meta">
+            <div><dt>Phiên bản</dt><dd>1.2.51</dd></div>
+            <div><dt>Kiến trúc</dt><dd>64-bit</dd></div>
+            <div><dt>Sao lưu</dt><dd class="mono">30/10/2026 · 14:22</dd></div>
+            <div><dt>Vá bởi</dt><dd class="mono">sxe 0.4.0</dd></div>
+          </dl>
+        </section>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Áp dụng
+          </button>
+          <button class="btn btn-secondary" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-restart"/></svg>Khôi phục
+          </button>
+          <button class="btn btn-secondary" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-save"/></svg>Sao lưu
+          </button>
+          <button class="btn btn-ghost" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>Khởi động lại
+          </button>
+          <button class="btn btn-ghost" type="button">
+            <svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>Mở thư mục
+          </button>
+        </div>
+
+        <div class="warn" role="status">
+          <svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>
+          <span class="msg">Spotify đang chạy — thay đổi áp dụng sau khi khởi động lại</span>
+          <button class="link" type="button">Khởi động lại</button>
+        </div>
+
+        <div class="sec-head"><h2>Đang bật</h2><span class="count">3</span></div>
+        <section class="panel mod-list" aria-label="Module và theme đang bật">
+          <div class="mod-row">
+            <span class="mod-ico"><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg></span>
+            <div><p class="mod-name">Adblock</p><p class="mod-desc">Ẩn quảng cáo và thẻ được tài trợ.</p></div>
+            <span class="ver">v1.0.0</span>
+            <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Tắt Adblock" data-name="Adblock"></button>
+          </div>
+          <div class="mod-row">
+            <span class="mod-ico"><svg class="ico" aria-hidden="true"><use href="#i-palette"/></svg></span>
+            <div><p class="mod-name">Soft</p><p class="mod-desc">Theme tối, xanh Spotify.</p></div>
+            <span class="ver">v2.1</span>
+            <span class="mini-chip">Đang dùng</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-ico"><svg class="ico" aria-hidden="true"><use href="#i-volume"/></svg></span>
+            <div><p class="mod-name">Volume memory</p><p class="mod-desc">Nhớ mức âm lượng khi mở lại.</p></div>
+            <span class="ver">v1.0.0</span>
+            <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Tắt Volume memory" data-name="Volume memory"></button>
+          </div>
+        </section>
+      </div>
+
+      <footer class="main-foot">
+        <span class="dot" aria-hidden="true"></span>
+        <span>Sẵn sàng</span>
+        <span class="sep">·</span>
+        <span>Spotify 1.2.51</span>
+        <span class="grow"></span>
+        <span>x64 · Windows 11</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+  var root = document.documentElement;
+  function setTheme(theme) {
+    root.setAttribute('data-theme', theme);
+    root.style.colorScheme = theme;
+    document.querySelectorAll('[data-set-theme]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-set-theme') === theme));
+    });
+  }
+  document.querySelectorAll('[data-set-theme]').forEach(function (b) {
+    b.addEventListener('click', function () { setTheme(b.getAttribute('data-set-theme')); });
+  });
+  document.querySelectorAll('.switch').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-checked') === 'true';
+      btn.setAttribute('aria-checked', String(!on));
+      btn.setAttribute('aria-label', (on ? 'Bật ' : 'Tắt ') + (btn.getAttribute('data-name') || 'module'));
+    });
+  });
+</script>
+</body>
+</html>
